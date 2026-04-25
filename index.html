@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>戦国クリッカー</title>
+<style>
+:root{--tabbar-h:60px;}
+html,body{
+  min-height:100%;
+  margin:0;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+  background:linear-gradient(#f5e6c8,#e0c097);
+  color:#222;
+}
+body{position:relative;text-align:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.screen{
+  display:none;
+  height:calc(100dvh - var(--tabbar-h));
+  overflow-y:auto;
+  padding:10px 0 14px;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.screen::-webkit-scrollbar{display:none;}
+.show{display:block;}
+
+#tabbar{display:none;}
+.tabbar{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  height:var(--tabbar-h);
+  display:flex;
+  background:#2b2b2b;
+  z-index:1000;
+}
+.tab{
+  flex:1;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  cursor:pointer;
+  user-select:none;
+}
+.tab.active{background:#666;}
+.box{
+  background:#fff;
+  margin:10px auto;
+  padding:12px;
+  width:min(320px, calc(100vw - 24px));
+  border-radius:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+}
+.wideBox{width:min(740px, calc(100vw - 24px));}
+.hero,.heroAlt,.titleHero{
+  color:#fff;
+  border:2px solid #f3df9d;
+  border-radius:16px;
+  padding:14px 12px;
+  box-shadow:0 8px 18px rgba(0,0,0,.14) inset, 0 8px 20px rgba(0,0,0,.10);
+}
+.hero{background:linear-gradient(135deg,#1d3b4d,#caa75a);}
+.heroAlt{background:linear-gradient(135deg,#2f223f,#8d4c2e);}
+.titleHero{background:linear-gradient(135deg,#5c2d1f,#c89542); width:min(740px, calc(100vw - 24px)); margin:20px auto 12px;}
+.heroTitle{font-size:26px;font-weight:900;letter-spacing:.04em;line-height:1.1;}
+.heroSub{margin-top:6px;font-size:12px;opacity:.95;}
+.heroDate{
+  display:inline-block;
+  margin-top:10px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  font-size:12px;
+}
+.button,.navbtn,.loginInput{
+  border:none;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.button{padding:10px 12px;margin:5px;cursor:pointer;}
+.navbtn{padding:8px 12px;border:1px solid #333;background:#fff;cursor:pointer;}
+.loginInput{
+  width:min(340px, calc(100vw - 56px));
+  padding:12px 14px;
+  font-size:16px;
+  border:1px solid #bbb;
+  box-sizing:border-box;
+}
+.button:disabled,.navbtn:disabled{opacity:.5;cursor:not-allowed;}
+.card{
+  border:1px solid #333;
+  margin:5px;
+  padding:8px;
+  display:inline-block;
+  cursor:pointer;
+  border-radius:12px;
+  background:#fff;
+  vertical-align:top;
+  min-width:108px;
+  max-width:140px;
+  line-height:1.25;
+  box-shadow:0 1px 4px rgba(0,0,0,.10);
+}
+.card.locked{opacity:.70;filter:grayscale(.25);}
+.selected{background:gold;}
+.ssr{background:linear-gradient(#ffef9a,#ffd84f);}
+.sr{background:linear-gradient(#d8f2ff,#84d6ff);}
+.r{background:linear-gradient(#efefef,#d4d4d4);}
+.small{font-size:12px;}
+.navrow{display:flex;justify-content:center;gap:8px;margin:8px 0 2px;flex-wrap:wrap;}
+.loggrid{display:grid;gap:6px;margin-top:8px;}
+.grid5{grid-template-columns:repeat(5,minmax(0,1fr));}
+.grid4{grid-template-columns:repeat(4,minmax(0,1fr));}
+.logcard{
+  min-height:64px;
+  font-size:11px;
+  line-height:1.25;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:4px;
+}
+.carouselWrap{width:min(740px, calc(100vw - 24px));margin:10px auto 0;}
+.carouselNav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 8px;}
+.pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#fff;font-size:12px;border:1px solid #ddd;margin:4px 2px;}
+.carousel{
+  display:flex;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  gap:12px;
+  padding:4px 2px 10px;
+  -webkit-overflow-scrolling:touch;
+}
+.carousel::-webkit-scrollbar{display:none;}
+.panel{flex:0 0 100%;scroll-snap-align:start;background:rgba(255,255,255,.28);border-radius:18px;padding:0 0 10px;}
+.panelInner{width:100%;box-sizing:border-box;}
+.panelTitle{margin:0 auto;padding:0 10px 8px;}
+.rowCards{display:flex;flex-wrap:wrap;justify-content:center;}
+.gwPayRow{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;}
+.gwPayRow .button{min-width:118px;margin:0;}
+.divider{height:1px;background:#0002;margin:10px 0;}
+.traitBox{background:#f8f8f8;border:1px solid #ddd;border-radius:12px;padding:10px;margin-top:10px;text-align:left;}
+.traitBox h4{margin:0 0 6px;}
+.traitGrid{display:grid;gap:6px;font-size:13px;}
+.traitItem{background:#fff;border-radius:10px;padding:8px;border:1px solid #ddd;}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;background:#00000010;margin-left:4px;}
+#modal{display:none;position:fixed;inset:0;background:#0008;align-items:center;justify-content:center;z-index:2000;}
+#modalContent{background:#fff;padding:18px 16px;border-radius:14px;width:min(380px, calc(100vw - 28px));max-height:85vh;overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.30);text-align:left;}
+#adminPanel{display:none;position:fixed;top:10px;right:10px;background:#222;color:#fff;padding:10px;border-radius:10px;z-index:9999;text-align:center;}
+.countBox{font-size:18px;font-weight:700;}
+#stats,#bonus,#mainBanner,#permanentInfo,#puInfo,#gwInfo,#gachaResult,#gwResult,#permanentResult,#gachaBanner,#gwBanner,#permanentBanner,#gwLoginStatus,#startLoginStatus,#giftStatus{line-height:1.5;}
+.noticeChip{display:inline-block;padding:6px 10px;margin-top:6px;border-radius:999px;background:#fff6;color:#fff;font-size:12px;}
+
+/* title/login */
+.titleWrap{
+  width:min(740px, calc(100vw - 24px));
+  margin:0 auto;
+}
+.titleInputArea{
+  width:min(740px, calc(100vw - 24px));
+  margin:0 auto 12px;
+}
+.titleBtns{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.titleNote{font-size:13px;line-height:1.6;}
+
+/* gift screen */
+.giftList{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.giftCard{
+  background:#fff;
+  border-radius:14px;
+  padding:10px;
+  border:1px solid #ddd;
+  text-align:left;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+}
+.giftCard.claimed{opacity:.6;background:#f5f5f5;}
+.giftCard h4{margin:0 0 4px;}
+.giftCard .giftMeta{font-size:12px;color:#444;line-height:1.45;}
+
+
+.titleInputArea{display:grid;gap:8px;justify-items:center;}
+.profileGrid{display:grid;gap:10px;}
+.profileIdentity,
+.searchResult,
+.rankItem,
+.friendCard{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
+  text-align:left;
+}
+.profileIdentity{line-height:1.6;}
+.profileForm{display:grid;gap:8px;}
+.profileRow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.profileRow .loginInput,
+.profileRow select{width:min(340px, calc(100vw - 56px));}
+.rankList{display:grid;gap:8px;margin-top:10px;}
+.rankTop1{background:linear-gradient(#fff3b5,#ffd84f);}
+.rankMe{outline:2px solid #7ea65d;}
+.friendList{display:grid;gap:8px;}
+.inlineBadge{display:inline-block;padding:3px 8px;border-radius:999px;background:#00000010;font-size:11px;margin-left:4px;}
+.metaLine{font-size:12px;color:#555;line-height:1.5;}
+.copyBtn{padding:7px 10px;font-size:12px;}
+
+
+.titleForm{display:grid;gap:8px;justify-items:center;}
+.loginActions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;width:min(340px, calc(100vw - 56px));}
+.touchButton{min-height:48px;min-width:120px;}
+
+/* ===== Gacha animation ===== */
+.gachaAnimOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:3500;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  color:#fff;
+  pointer-events:none;
+  background:linear-gradient(#02040a,#07111f 28%,#32415e 45%,#9c7848 72%,#dfc28a 100%);
+}
+.gachaAnimOverlay.show{display:flex;}
+.gachaAnimScene{position:relative;width:100%;height:100%;overflow:hidden;isolation:isolate;}
+.gachaAnimSky{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255,245,170,.10) 0 12%, transparent 13% 100%),
+    linear-gradient(#061120,#12253b 34%, #7e6442 68%, #d7bf8f 100%);
+  transition:filter .45s ease, transform .45s ease, opacity .45s ease;
+  filter:saturate(.85) brightness(.55);
+}
+.gachaAnimOverlay.dawn .gachaAnimSky{filter:saturate(.95) brightness(.82);}
+.gachaAnimOverlay.present .gachaAnimSky{filter:saturate(1.03) brightness(1.06);}
+.gachaAnimOverlay.reveal .gachaAnimSky{filter:saturate(1.08) brightness(1.14);}
+.gachaAnimSun{
+  position:absolute;left:50%;bottom:36%;width:108px;height:108px;border-radius:50%;transform:translateX(-50%) translateY(130px) scale(.55);opacity:.18;
+  background:radial-gradient(circle, #fff9cf 0 18%, #ffe57e 30%, #ffca47 58%, rgba(255,202,71,0) 75%);
+  box-shadow:0 0 26px rgba(255,227,130,.24), 0 0 80px rgba(255,210,80,.14);
+  transition:transform .7s ease, opacity .7s ease;
+}
+.gachaAnimOverlay.dawn .gachaAnimSun{transform:translateX(-50%) translateY(18px) scale(.86);opacity:.75;}
+.gachaAnimOverlay.present .gachaAnimSun{transform:translateX(-50%) translateY(0) scale(1);opacity:1;}
+.gachaSunRays{
+  position:absolute;left:50%;bottom:33%;width:420px;height:420px;transform:translateX(-50%) scale(.2);opacity:0;
+  background:radial-gradient(circle, rgba(255,245,180,.32) 0 6%, rgba(255,245,180,.18) 15%, transparent 60%);
+  transition:transform .7s ease, opacity .7s ease;border-radius:50%;
+}
+.gachaAnimOverlay.present .gachaSunRays{transform:translateX(-50%) scale(1);opacity:1;}
+.gachaShadow{position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.12), rgba(0,0,0,0));transition:opacity .55s ease;opacity:.98;}
+.gachaAnimOverlay.dawn .gachaShadow{opacity:.62;}
+.gachaAnimOverlay.present .gachaShadow{opacity:.35;}
+.gachaAnimOverlay.reveal .gachaShadow{opacity:.18;}
+.gachaCastle{position:absolute;left:50%;bottom:29%;width:min(78vw,720px);height:200px;transform:translateX(-50%);opacity:.92;filter:drop-shadow(0 6px 18px rgba(0,0,0,.42));}
+.gachaCastleBase{position:absolute;left:50%;bottom:0;width:min(56vw,430px);height:104px;transform:translateX(-50%);background:#05070d;border-radius:10px 10px 0 0;}
+.gachaCastleTower{position:absolute;bottom:0;width:74px;height:146px;background:#05070d;border-radius:10px 10px 0 0;}
+.gachaCastleTower::before{content:"";position:absolute;left:50%;top:-28px;transform:translateX(-50%);width:0;height:0;border-left:38px solid transparent;border-right:38px solid transparent;border-bottom:30px solid #05070d;}
+.gachaCastleTower.left{left:18%;}
+.gachaCastleTower.right{right:18%;}
+.gachaCastleTower.center{left:50%;transform:translateX(-50%);width:94px;height:176px;}
+.gachaCastleTower.center::before{border-left-width:48px;border-right-width:48px;}
+.gachaCastleWall{position:absolute;left:50%;bottom:34px;width:min(74vw,620px);height:58px;transform:translateX(-50%);background:#05070d;border-radius:8px;}
+.gachaGateArea{position:absolute;left:50%;bottom:6%;width:min(88vw,760px);height:300px;transform:translateX(-50%);display:flex;align-items:flex-end;justify-content:center;}
+.gachaGate{position:relative;width:min(66vw,460px);height:220px;transform:translateY(16px) scale(.95);opacity:.76;transition:transform .42s ease, opacity .42s ease;}
+.gachaAnimOverlay.present .gachaGate{transform:translateY(0) scale(1);opacity:1;}
+.gateRoof{position:absolute;top:-26px;left:50%;transform:translateX(-50%);width:112%;height:42px;clip-path:polygon(0 100%, 9% 35%, 50% 0, 91% 35%, 100% 100%);background:linear-gradient(#765022,#5b3c16);border:1px solid rgba(255,255,255,.08);border-bottom:none;box-shadow:0 10px 18px rgba(0,0,0,.22);}
+.gateFrame{position:absolute;inset:0;border:8px solid #65421f;border-bottom-width:12px;border-radius:12px 12px 8px 8px;background:linear-gradient(#d6b57c,#8e673f);box-shadow:inset 0 0 0 2px rgba(255,255,255,.06), 0 18px 30px rgba(0,0,0,.18);}
+.gateDoors{position:absolute;inset:20px 24px 20px;display:flex;perspective:900px;}
+.gateDoor{flex:1;position:relative;background:linear-gradient(90deg, rgba(255,255,255,.18) 0 8%, transparent 8% 16%, rgba(0,0,0,.06) 16% 17%, transparent 17% 100%),repeating-linear-gradient(90deg, rgba(0,0,0,.09) 0 8px, rgba(255,255,255,.05) 8px 16px),linear-gradient(#b38149,#8c6137);border:1px solid rgba(0,0,0,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);transform-origin:center;transition:transform .7s cubic-bezier(.16,.84,.22,1), filter .45s ease;}
+.gateDoor::after{content:"";position:absolute;top:14px;bottom:14px;width:8px;background:rgba(255,255,255,.15);border-radius:999px;}
+.gateDoor.left{border-radius:10px 0 0 10px;border-right-width:6px;}
+.gateDoor.left::after{right:12px;}
+.gateDoor.right{border-radius:0 10px 10px 0;border-left-width:6px;}
+.gateDoor.right::after{left:12px;}
+.gachaAnimOverlay.open .gateDoor.left{transform:translateX(-4px) rotateY(-73deg);}
+.gachaAnimOverlay.open .gateDoor.right{transform:translateX(4px) rotateY(73deg);}
+.gateReveal{position:absolute;inset:28px 30px 22px;border-radius:10px;background:radial-gradient(circle at center, rgba(255,255,255,.98) 0 18%, rgba(255,248,210,.94) 28%, rgba(255,220,105,.52) 46%, rgba(255,220,105,.10) 64%, rgba(255,220,105,0) 78%);opacity:0;transform:scale(.78);transition:opacity .55s ease, transform .55s ease;mix-blend-mode:screen;}
+.gachaAnimOverlay.open .gateReveal{opacity:1;transform:scale(1.15);}
+.gateType-wood .gateFrame,.gateType-wood .gateDoor{background:linear-gradient(90deg, rgba(255,255,255,.14) 0 7%, transparent 7% 14%, rgba(0,0,0,.06) 14% 15%, transparent 15% 100%),repeating-linear-gradient(90deg, rgba(0,0,0,.08) 0 10px, rgba(255,255,255,.04) 10px 20px),linear-gradient(#ba8a55,#855933);}
+.gateType-red .gateFrame,.gateType-red .gateDoor{background:linear-gradient(90deg, rgba(255,255,255,.11) 0 7%, transparent 7% 14%, rgba(0,0,0,.08) 14% 15%, transparent 15% 100%),repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 10px, rgba(0,0,0,.12) 10px 20px),linear-gradient(#d64d4d,#8d1515);}
+.gateType-gold .gateFrame,.gateType-gold .gateDoor{background:linear-gradient(90deg, rgba(255,255,255,.16) 0 7%, transparent 7% 14%, rgba(0,0,0,.06) 14% 15%, transparent 15% 100%),repeating-linear-gradient(90deg, rgba(255,255,255,.22) 0 10px, rgba(255,198,0,.08) 10px 20px),linear-gradient(#ffd95d,#bc8b09);}
+.gateType-red .gateRoof{background:linear-gradient(#b43b3b,#7a1111);}
+.gateType-gold .gateRoof{background:linear-gradient(#ffe081,#bb8d05);}
+.horseman{position:absolute;left:-20%;bottom:20%;font-size:74px;line-height:1;opacity:0;transform:translateX(0) scale(.92);filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));transition:transform 1.05s linear, opacity .18s ease;z-index:6;}
+.gachaAnimOverlay.ride .horseman{opacity:1;transform:translateX(170%) scale(1);}
+.gachaAnimOverlay.reveal .horseman{transform:translateX(220%) scale(1.02);opacity:0;}
+.gachaHud{position:absolute;left:50%;top:10%;width:min(92vw,620px);transform:translateX(-50%);text-align:center;z-index:7;}
+.gachaState{display:inline-block;padding:10px 20px;border-radius:999px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.15);font-size:34px;font-weight:900;letter-spacing:.1em;box-shadow:0 10px 24px rgba(0,0,0,.15);}
+.gachaResultCard{margin:14px auto 0;width:min(88vw,420px);min-height:92px;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.92);color:#202020;box-shadow:0 22px 42px rgba(0,0,0,.28);opacity:0;transform:translateY(18px) scale(.94);transition:opacity .38s ease, transform .38s ease, box-shadow .38s ease;}
+.gachaAnimOverlay.reveal .gachaResultCard{opacity:1;transform:translateY(0) scale(1);}
+.gachaResultCard.ssr{background:linear-gradient(#fff3b5,#ffd84f);}
+.gachaResultCard.sr{background:linear-gradient(#e1f4ff,#8bd5ff);}
+.gachaResultCard.r{background:linear-gradient(#f5f5f5,#d1d1d1);}
+.gachaResultTop{font-size:12px;font-weight:800;letter-spacing:.08em;opacity:.75;}
+.gachaResultName{margin-top:5px;font-size:34px;font-weight:900;line-height:1.2;}
+.gachaResultNote{margin-top:5px;font-size:13px;opacity:.8;}
+.gachaFlash{position:absolute;inset:0;background:radial-gradient(circle at center, rgba(255,255,255,.74) 0 18%, rgba(255,235,160,.42) 28%, rgba(255,235,160,0) 55%);opacity:0;transition:opacity .24s ease;z-index:5;}
+.gachaAnimOverlay.reveal .gachaFlash{opacity:1;}
+.gachaAnimOverlay.reverse .gachaFlash{background:radial-gradient(circle at center, rgba(255,232,110,.88) 0 18%, rgba(255,218,80,.46) 28%, rgba(255,218,80,0) 56%);}
+.gachaFreezeText{position:absolute;left:50%;top:52px;transform:translateX(-50%);padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.95);color:#1b1b1b;font-size:15px;font-weight:900;letter-spacing:.12em;opacity:0;z-index:9;box-shadow:0 14px 30px rgba(0,0,0,.2);transition:transform .2s ease, opacity .2s ease;}
+.gachaAnimOverlay.freeze .gachaFreezeText{opacity:1;transform:translateX(-50%) scale(1.08);}
+.gachaReverseBadge{position:absolute;left:50%;top:98px;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:rgba(255,228,106,.92);color:#372500;font-size:12px;font-weight:900;letter-spacing:.08em;opacity:0;z-index:8;box-shadow:0 10px 24px rgba(0,0,0,.18);}
+.gachaAnimOverlay.reverse .gachaReverseBadge{opacity:1;}
+@media (min-width: 1024px){
+  .box{width:min(380px, calc(100vw - 32px));}
+  .wideBox,.titleHero,.carouselWrap,.titleWrap,.titleInputArea{width:min(960px, calc(100vw - 32px));}
+  .heroTitle{font-size:30px;}
+  .screen{padding-top:14px;}
+}
+@media (max-width: 720px){
+  :root{--tabbar-h:108px;}
+  .tabbar{display:grid;grid-template-columns:repeat(3,1fr);}
+  .tab{font-size:13px;min-height:36px;}
+  .box,.wideBox,.titleHero,.carouselWrap,.titleWrap,.titleInputArea{width:min(100vw - 16px, 100%);}
+  .carouselNav{flex-direction:column;align-items:center;}
+  .gwPayRow .button,.button,.navbtn{min-width:0;}
+  .loginInput{width:min(100vw - 40px, 360px);}
+  .grid5,.grid4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .gachaResultName{font-size:28px;}
+}
+@media (max-width: 520px){
+  .gachaCastleTower.left{left:10%;}
+  .gachaCastleTower.right{right:10%;}
+  .gachaGate{width:min(84vw,460px);height:196px;}
+  .horseman{font-size:62px;bottom:18%;}
+  .gachaState{font-size:18px;}
+  .tab{font-size:14px;}
+}
+</style>
+</head>
+<body>
+
+<div id="titleScreen" class="screen show">
+  <div class="titleHero">
+    <div class="heroTitle">戦国クリッカー</div>
+    <div class="heroSub">プレイヤー名を決めて、城下の戦を始めよう。</div>
+    <div class="heroDate">ログインしてゲームを開始</div>
+  </div>
+
+  <div class="box wideBox">
+    <h3>📝 プレイヤー名の設定</h3>
+    <p class="small">初回はここで名前を設定してログインしてください。</p>
+    <form id="loginForm" class="titleForm" onsubmit="return handleTitleLogin(event)">
+      <div class="titleInputArea">
+        <input id="titlePlayerName" class="loginInput" type="text" maxlength="16" placeholder="プレイヤー名を入力" autocomplete="nickname" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      </div>
+      <div class="loginActions">
+        <button type="submit" class="button touchButton">ログイン</button>
+        <button type="button" class="button touchButton" onclick="useGuestName()">おまかせ名でログイン</button>
+      </div>
+    </form>
+    <p id="titleStatus" class="titleNote"></p>
+    <p id="storageStatus" class="titleNote"></p>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🔑 データ復元</h3>
+    <p class="small">プレイヤーIDとパスワードで、以前のデータを読み込みます。</p>
+    <form id="restoreForm" class="titleForm" onsubmit="return handleRestoreLogin(event)">
+      <div class="titleInputArea">
+        <input id="restorePlayerId" class="loginInput" type="text" maxlength="24" placeholder="プレイヤーID" autocomplete="username" autocapitalize="off" spellcheck="false">
+        <input id="restorePlayerPassword" class="loginInput" type="password" maxlength="32" placeholder="パスワード" autocomplete="current-password">
+      </div>
+      <div class="loginActions">
+        <button type="submit" class="button touchButton">データ復元してログイン</button>
+        <button type="button" class="button touchButton" onclick="fillRestoreFromCurrent()">この端末のIDを表示</button>
+      </div>
+    </form>
+    <p class="small">IDはプレイヤーごとに固有です。新規作成後は、プレイヤー情報設定画面でも確認できます。</p>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🎁 贈り物</h3>
+    <p class="small">新規プレイヤーには小判10000を贈っています。ログイン後、贈り物から一括受取できます。</p>
+  </div>
+
+  <div class="box wideBox">
+    <h3>📌 つづけて遊ぶ</h3>
+    <p class="small">保存済みデータがあれば、IDとパスワードでそのまま続けられます。</p>
+  </div>
+</div>
+
+<div id="main" class="screen">
+  <h2 id="playerBanner" class="countBox">ようこそ</h2>
+  <h2 id="gold" class="countBox">小判:0</h2>
+  <button class="button" onclick="clickGold()">👆 クリック</button><br>
+  <button class="button" onclick="upgradeClick()" id="clickBtn"></button>
+  <button class="button" onclick="buyAuto()" id="autoBtn"></button>
+  <button class="button" onclick="expandParty()" id="partyBtn"></button>
+
+  <div class="box">
+    <p id="stats"></p>
+    <p id="bonus"></p>
+  </div>
+
+  <div class="box">
+    <h4>📢 注目</h4>
+    <p id="mainBanner"></p>
+  </div>
+</div>
+
+<div id="gachaHub" class="screen">
+  <div class="carouselWrap">
+    <div class="carouselNav">
+      <button class="navbtn" onclick="scrollGacha(-1)">←</button>
+      <div>
+        <span class="pill">横スクロールで切替</span>
+        <span class="pill">カードをクリックで詳細</span>
+      </div>
+      <button class="navbtn" onclick="scrollGacha(1)">→</button>
+    </div>
+
+    <div class="carousel" id="gachaCarousel">
+      <section class="panel" id="permanentPanel">
+        <div class="panelInner">
+          <div class="box wideBox hero panelTitle">
+            <div class="heroTitle">🏯 常設ガチャ</div>
+            <div class="heroSub">SSRは織田信長・真田幸村・前田慶次 / SR・Rは全共通</div>
+            <div class="heroDate">小判でも常設札でも回せる</div>
+          </div>
+          <div class="box wideBox">
+            <h3>🔥 ピックアップ</h3>
+            <div id="permanentPickup" class="rowCards"></div>
+          </div>
+          <div class="box wideBox">
+            <p id="permanentInfo"></p>
+            <div class="gwPayRow">
+              <button class="button" onclick="drawBanner('permanent',1,'gold')">1連(1000)</button>
+              <button class="button" onclick="drawBanner('permanent',10,'gold')">10連(10000)</button>
+              <button class="button" onclick="drawBanner('permanent',1,'ticket')">1連(常設札1)</button>
+              <button class="button" onclick="drawBanner('permanent',10,'ticket')">10連(常設札10)</button>
+            </div>
+            <p id="permanentResult"></p>
+          </div>
+          <div class="box wideBox">
+            <h3>📊 提供割合</h3>
+            <div id="permanentRates"></div>
+          </div>
+          <div class="box wideBox">
+            <h3>📢 お知らせ</h3>
+            <p id="permanentBanner"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="standardPanel">
+        <div class="panelInner">
+          <div class="box wideBox hero panelTitle">
+            <div class="heroTitle">🎰 徳川忠臣ガチャ</div>
+            <div class="heroSub">PU表示は本多忠勝・井伊直政のみ / SSR3％・SR39％・R58％</div>
+            <div class="heroDate">100回目はPU30倍 / 200回目はPU50倍 + SSR確定</div>
+          </div>
+          <div class="box wideBox">
+            <h3>🔥 ピックアップ</h3>
+            <div id="pickup" class="rowCards"></div>
+          </div>
+          <div class="box wideBox">
+            <p id="puInfo"></p>
+            <div class="gwPayRow">
+              <button class="button" onclick="drawBanner('standard',1,'gold')">1連(1000)</button>
+              <button class="button" onclick="drawBanner('standard',10,'gold')">10連(10000)</button>
+            </div>
+            <p id="gachaResult"></p>
+          </div>
+          <div class="box wideBox">
+            <h3>📊 提供割合</h3>
+            <div id="rates"></div>
+          </div>
+          <div class="box wideBox">
+            <h3>📢 お知らせ</h3>
+            <p id="gachaBanner"></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="gwPanel">
+        <div class="panelInner">
+          <div class="box wideBox heroAlt panelTitle">
+            <div class="heroTitle">🎏 GW記念ガチャ</div>
+            <div class="heroSub">PU表示は徳川家康・徳川秀忠のみ / SSR3％・SR39％・R58％</div>
+            <div class="heroDate">100回目はPU30倍 / 200回目はPU50倍 + SSR確定</div>
+          </div>
+          <div class="box wideBox">
+            <h3>🌿 ピックアップ</h3>
+            <div id="gwPickup" class="rowCards"></div>
+          </div>
+          <div class="box wideBox">
+            <p id="gwInfo"></p>
+            <div class="gwPayRow">
+              <button class="button" onclick="drawBanner('gw',1,'gold')">1連(小判1000)</button>
+              <button class="button" onclick="drawBanner('gw',1,'ticket')">1連(GW札1)</button>
+              <button class="button" onclick="drawBanner('gw',10,'gold')">10連(小判10000)</button>
+              <button class="button" onclick="drawBanner('gw',10,'ticket')">10連(GW札10)</button>
+            </div>
+            <p id="gwResult"></p>
+          </div>
+          <div class="box wideBox">
+            <h3>📊 提供割合</h3>
+            <div id="gwRates"></div>
+          </div>
+          <div class="box wideBox">
+            <h3>📢 お知らせ</h3>
+            <p id="gwBanner"></p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="giftScreen" class="screen">
+  <div class="box wideBox hero">
+    <div class="heroTitle">🎁 贈り物</div>
+    <div class="heroSub">ここでまとめて受け取れます。</div>
+    <div class="heroDate">一括受取対応</div>
+  </div>
+
+  <div class="navrow">
+    <button class="navbtn" onclick="goScreen('main')">← ホーム</button>
+    <button class="navbtn" onclick="goScreen('loginScreen')">ログインボーナス →</button>
+  </div>
+
+  <div class="box wideBox">
+    <h3>📥 受取箱</h3>
+    <p id="giftStatus"></p>
+    <div class="titleBtns">
+      <button class="button" onclick="claimAllGifts()">一括受取</button>
+      <button class="button" onclick="claimAllGifts(true)">未受取だけ確認</button>
+    </div>
+    <div id="giftList" class="giftList"></div>
+  </div>
+</div>
+
+<div id="loginScreen" class="screen">
+  <div class="box wideBox hero">
+    <div class="heroTitle">📅 ログインボーナス</div>
+    <div class="heroSub">GW 5日 / スタートダッシュ 20日</div>
+    <div class="heroDate">受取状況をそのまま見やすく表示</div>
+  </div>
+
+  <div class="navrow">
+    <button class="navbtn" onclick="goScreen('gachaHub',0)">← ガチャ</button>
+    <button class="navbtn" onclick="goScreen('giftScreen')">贈り物 →</button>
+    <button class="navbtn" onclick="goScreen('collectionScreen')">図鑑 →</button>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🌿 GWログインボーナス</h3>
+    <p class="small">5日間、GW登用札×10を配布</p>
+    <div id="gwLoginGrid" class="loggrid grid5"></div>
+    <p id="gwLoginStatus"></p>
+    <button class="button" onclick="claimGWLogin()" id="gwClaimBtn"></button>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🎉 スタートダッシュログインボーナス</h3>
+    <p class="small">20日間、小判や豊臣秀吉札を配布（5凸分まで）</p>
+    <div id="startLoginGrid" class="loggrid grid4"></div>
+    <p id="startLoginStatus"></p>
+    <button class="button" onclick="claimStartLogin()" id="startClaimBtn"></button>
+  </div>
+</div>
+
+<div id="collectionScreen" class="screen">
+  <h2>📖 図鑑</h2>
+  <div class="box wideBox">
+    <div id="collection"></div>
+  </div>
+  <h3>⚔️ 編成</h3>
+  <div class="box wideBox">
+    <div id="party"></div>
+  </div>
+</div>
+
+<div id="rankingScreen" class="screen">
+  <div class="box wideBox hero">
+    <div class="heroTitle">🏆 小判ランキング</div>
+    <div class="heroSub">登録済みプレイヤーの所持小判で順位を表示します。</div>
+    <div class="heroDate">上位者には常設ガチャチケと特別称号</div>
+  </div>
+
+  <div class="navrow">
+    <button class="navbtn" onclick="goScreen('main')">← ホーム</button>
+    <button class="navbtn" onclick="goScreen('profileScreen')">プレイヤー情報 →</button>
+    <button class="navbtn" onclick="goScreen('loginScreen')">ログイン →</button>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🎖 ランキング報酬</h3>
+    <p id="rankingRewardNote"></p>
+    <div class="titleBtns">
+      <button class="button" onclick="claimRankingReward()" id="rankingRewardBtn">ランキング報酬を受け取る</button>
+      <button class="button" onclick="renderRanking()">更新</button>
+    </div>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🏅 現在の順位</h3>
+    <div id="rankingList" class="rankList"></div>
+  </div>
+</div>
+
+<div id="profileScreen" class="screen">
+  <div class="box wideBox hero">
+    <div class="heroTitle">🧭 プレイヤー情報設定</div>
+    <div class="heroSub">名前の再設定、称号変更、ID検索、フレンド管理ができます。</div>
+    <div class="heroDate">プレイヤーIDはここで確認できます</div>
+  </div>
+
+  <div class="navrow">
+    <button class="navbtn" onclick="goScreen('main')">← ホーム</button>
+    <button class="navbtn" onclick="goScreen('rankingScreen')">ランキング →</button>
+    <button class="navbtn" onclick="goScreen('giftScreen')">贈り物 →</button>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🪪 アカウント情報</h3>
+    <div id="profileIdentityBox" class="profileIdentity"></div>
+  </div>
+
+  <div class="box wideBox">
+    <h3>✏️ プレイヤー設定</h3>
+    <div class="profileForm">
+      <div class="profileRow">
+        <input id="profileNameInput" class="loginInput" type="text" maxlength="16" placeholder="プレイヤー名">
+      </div>
+      <div class="profileRow">
+        <input id="profileTitleInput" class="loginInput" type="text" maxlength="16" placeholder="表示称号を入力">
+      </div>
+      <div class="profileRow">
+        <select id="profileTitleSelect" class="loginInput"></select>
+      </div>
+      <div class="titleBtns">
+        <button class="button" onclick="saveProfileSettings()">変更を保存</button>
+        <button class="button" onclick="grantOwnedTitleFromInput()">称号を所持リストへ追加</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🔍 プレイヤー検索</h3>
+    <div class="profileForm">
+      <div class="profileRow">
+        <input id="profileSearchInput" class="loginInput" type="text" maxlength="24" placeholder="プレイヤーIDを入力">
+      </div>
+      <div class="titleBtns">
+        <button class="button" onclick="searchPlayerById()">検索</button>
+        <button class="button" onclick="clearSearchResult()">クリア</button>
+      </div>
+    </div>
+    <div id="profileSearchResult" class="searchResult" style="margin-top:10px;"></div>
+  </div>
+
+  <div class="box wideBox">
+    <h3>🤝 フレンド</h3>
+    <p class="small">検索した相手をフレンドに追加できます。</p>
+    <div id="friendList" class="friendList"></div>
+  </div>
+</div>
+
+<div id="modal"><div id="modalContent"></div></div>
+
+<div id="adminPanel">
+  <h4>🛠 管理</h4>
+  <button class="button" onclick="addGold()">💰 小判MAX</button><br>
+  <button class="button" onclick="forceSSR()">🎰 SSR確定</button><br>
+  <button class="button" onclick="addCount()">📈 回数+50</button><br>
+  <button class="button" onclick="resetSave()">♻ リセット</button><br>
+  <button class="button" onclick="toggleAdmin()">閉じる</button>
+</div>
+
+<div id="gachaAnimOverlay" class="gachaAnimOverlay" aria-hidden="true">
+  <div class="gachaAnimScene">
+    <div class="gachaAnimSky"></div>
+    <div class="gachaSunRays"></div>
+    <div class="gachaAnimSun"></div>
+    <div class="gachaShadow"></div>
+
+    <div class="gachaCastle">
+      <div class="gachaCastleTower left"></div>
+      <div class="gachaCastleTower center"></div>
+      <div class="gachaCastleTower right"></div>
+      <div class="gachaCastleWall"></div>
+      <div class="gachaCastleBase"></div>
+    </div>
+
+    <div class="gachaHud">
+      <div id="gachaAnimState" class="gachaState">---</div>
+      <div id="gachaAnimResultCard" class="gachaResultCard">
+        <div id="gachaAnimResultTop" class="gachaResultTop">---</div>
+        <div id="gachaAnimResultName" class="gachaResultName">---</div>
+        <div id="gachaAnimResultMeta" class="gachaResultNote">---</div>
+      </div>
+    </div>
+
+    <div id="gachaFreezeText" class="gachaFreezeText">好機</div>
+    <div class="gachaReverseBadge">逆転演出</div>
+
+    <div class="gachaGateArea">
+      <div id="gachaAnimGate" class="gachaGate gateType-wood">
+        <div class="gateRoof"></div>
+        <div class="gateFrame"></div>
+        <div class="gateReveal"></div>
+        <div class="gateDoors">
+          <div class="gateDoor left"></div>
+          <div class="gateDoor right"></div>
+        </div>
+      </div>
+      <div class="horseman">🏇</div>
+    </div>
+
+    <div class="gachaFlash"></div>
+  </div>
+</div>
+
+<div class="tabbar" id="tabbar">
+  <div class="tab active" onclick="switchTab('main',this)">🏠</div>
+  <div class="tab" onclick="switchTab('gachaHub',this,0)">🏯</div>
+  <div class="tab" onclick="switchTab('gachaHub',this,1)">🎰</div>
+  <div class="tab" onclick="switchTab('gachaHub',this,2)">🎏</div>
+  <div class="tab" onclick="switchTab('giftScreen',this)">🎁</div>
+  <div class="tab" onclick="switchTab('loginScreen',this)">📅</div>
+  <div class="tab" onclick="switchTab('rankingScreen',this)">🏆</div>
+  <div class="tab" onclick="switchTab('profileScreen',this)">🧭</div>
+  <div class="tab" onclick="switchTab('collectionScreen',this)">📖</div>
+</div>
+
+<script>
+/* =========================
+   State
+========================= */
+let gold = 0;
+let baseClick = 1;
+let baseAuto = 0;
+let clickPower = 1;
+let autoIncome = 0;
+let clickCost = 10;
+let autoCost = 20;
+let collection = {};
+let party = [];
+let partyMax = 3;
+let maxExpand = 2;
+let gachaAnimating = false;
+let isAdmin = false;
+let keySeq = "";
+const secret = "admin";
+let standardCount = 0;
+let gwCount = 0;
+let gwTickets = 0;
+let permanentTickets = 0;
+let gwLoginDay = 1;
+let gwLoginLast = "";
+let startLoginDay = 1;
+let startLoginLast = "";
+let playerName = "";
+let gifts = [];
+let playerId = "";
+let playerPassword = "";
+let displayTitle = "無名の大名";
+let ownedTitles = ["無名の大名"];
+let friendIds = [];
+let rankingRewardClaims = {};
+let profileSearchResult = null;
+let activeProfileKey = "";
+const LEGACY_SAVE_KEY = "save";
+const PROFILE_REGISTRY_KEY = "sengoku_registry";
+const ACTIVE_PROFILE_KEY = "sengoku_active_profile";
+const PROFILE_PREFIX = "sengoku_profile_";
+const awakenNeed = [0,1,1,2,2,3];
+
+function todayKey(){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo"}).format(new Date());
+}
+function ensureGiftDefaults(){
+  if(!Array.isArray(gifts)) gifts = [];
+  if(gifts.length === 0){
+    gifts.push({
+      id: "welcome_gold",
+      title: "新規プレイヤー特典",
+      detail: "小判 +10000",
+      type: "gold",
+      amount: 10000,
+      claimed: false
+    });
+  }
+}
+function normalizeState(){
+  if(!playerName) playerName = "";
+  ensureGiftDefaults();
+}
+
+const __memoryStorage = Object.create(null);
+function __safeStorageAvailable(){
+  try{
+    const k = "__sengoku_storage_test__";
+    safeSetItem(k, "1");
+    safeRemoveItem(k);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+function safeGetItem(key){
+  try{
+    const v = safeGetItem(key);
+    if(v !== null && v !== undefined) return v;
+  }catch(e){}
+  return Object.prototype.hasOwnProperty.call(__memoryStorage, key) ? __memoryStorage[key] : null;
+}
+function safeSetItem(key, value){
+  const v = String(value);
+  __memoryStorage[key] = v;
+  try{ safeSetItem(key, v); }catch(e){}
+}
+function safeRemoveItem(key){
+  delete __memoryStorage[key];
+  try{ safeRemoveItem(key); }catch(e){}
+}
+function safeClearStorage(){
+  for(const k of Object.keys(__memoryStorage)) delete __memoryStorage[k];
+  try{ safeClearStorage(); }catch(e){}
+}
+function safeStorageKeys(){
+  const keys = new Set(Object.keys(__memoryStorage));
+  try{
+    for(let i=0;i<safeStorageKeys().length;i++){
+      const k = safeStorageKey(i);
+      if(k) keys.add(k);
+    }
+  }catch(e){}
+  return [...keys];
+}
+function safeStorageKey(index){
+  return safeStorageKeys()[index] ?? null;
+}
+
+document.addEventListener("keydown",(e)=>{
+  keySeq += e.key.toLowerCase();
+  if(keySeq.length > secret.length) keySeq = keySeq.slice(-secret.length);
+  if(keySeq === secret){
+    keySeq = "";
+    const pass = prompt("🔐 パスワード");
+    if(pass === "0819") toggleAdmin(true);
+    else alert("❌ 違う");
+  }
+});
+
+function toggleAdmin(force){
+  isAdmin = (force !== undefined) ? force : !isAdmin;
+  document.getElementById("adminPanel").style.display = isAdmin ? "block" : "none";
+}
+function addGold(){ if(!isAdmin) return; gold = 999999999; update(); }
+function addCount(){ if(!isAdmin) return; standardCount += 50; gwCount += 50; update(); }
+function resetSave(){ if(!isAdmin) return; safeClearStorage(); location.reload(); }
+function forceSSR(){ if(!isAdmin) return; gold += 100000; standardCount = 199; gwCount = 199; update(); }
+function rewardGold(amount){ gold += amount; }
+function rewardGWTickets(amount){ gwTickets += amount; }
+function rewardPermanentTickets(amount){ permanentTickets += amount; }
+function rewardChar(name,count=1){ addChar(name,count); }
+
+function randomString(length, alphabet){
+  const chars = alphabet || "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  if(window.crypto && crypto.getRandomValues){
+    const buf = new Uint32Array(length);
+    crypto.getRandomValues(buf);
+    for(let i=0;i<length;i++) out += chars[buf[i] % chars.length];
+    return out;
+  }
+  for(let i=0;i<length;i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+function generatePlayerId(){ return `SG-${randomString(8)}`; }
+function generatePassword(){ return randomString(8, "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"); }
+function formatGold(value){ return Math.floor(Number(value || 0)).toLocaleString("ja-JP"); }
+function getPlayerLabel(){ return playerName ? `${playerName}【${displayTitle || "無名の大名"}】` : "大名"; }
+function grantTitle(title){
+  const t = (title || "").trim();
+  if(!t) return;
+  if(!Array.isArray(ownedTitles)) ownedTitles = [];
+  if(!ownedTitles.includes(t)) ownedTitles.push(t);
+}
+function setDisplayTitle(title){
+  const t = (title || "").trim();
+  if(!t) return false;
+  displayTitle = t;
+  grantTitle(t);
+  return true;
+}
+function ensureCurrentProfileMeta(){
+  if(!playerId) playerId = generatePlayerId();
+  if(!playerPassword) playerPassword = generatePassword();
+  if(!displayTitle) displayTitle = "無名の大名";
+  grantTitle(displayTitle);
+  if(!friendIds) friendIds = [];
+  if(!rankingRewardClaims || typeof rankingRewardClaims !== "object") rankingRewardClaims = {};
+}
+function getProfileSaveKey(id){ return `${PROFILE_PREFIX}${id}`; }
+function cloneArray(v){ return Array.isArray(v) ? [...v] : []; }
+function getLegacyProfileData(){
+  const raw = safeGetItem(LEGACY_SAVE_KEY);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+function readRegistry(){
+  const raw = safeGetItem(PROFILE_REGISTRY_KEY);
+  if(!raw) return [];
+  try{ const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; }catch(e){ return []; }
+}
+function writeRegistry(list){
+  safeSetItem(PROFILE_REGISTRY_KEY, JSON.stringify(list || []));
+}
+function upsertRegistryEntry(){
+  if(!playerId) return;
+  const list = readRegistry();
+  const entry = { id: playerId, name: playerName || "", title: displayTitle || "無名の大名", gold: Math.floor(gold || 0), updatedAt: Date.now(), friends: cloneArray(friendIds) };
+  const idx = list.findIndex(v => v.id === playerId);
+  if(idx >= 0) list[idx] = { ...list[idx], ...entry };
+  else list.push(entry);
+  writeRegistry(list);
+}
+function applySaveData(d){
+  if(!d || typeof d !== "object") return;
+  gold = Number(d.gold || 0);
+  baseClick = Number(d.baseClick || 1);
+  baseAuto = Number(d.baseAuto || 0);
+  clickCost = Number(d.clickCost || 10);
+  autoCost = Number(d.autoCost || 20);
+  collection = d.collection || {};
+  party = Array.isArray(d.party) ? d.party : [];
+  partyMax = Number(d.partyMax || 3);
+  maxExpand = Number(d.maxExpand || 2);
+  standardCount = Number(d.standardCount || 0);
+  gwCount = Number(d.gwCount || 0);
+  gwTickets = Number(d.gwTickets || 0);
+  permanentTickets = Number(d.permanentTickets || 0);
+  gwLoginDay = Number(d.gwLoginDay || 1);
+  gwLoginLast = d.gwLoginLast || "";
+  startLoginDay = Number(d.startLoginDay || 1);
+  startLoginLast = d.startLoginLast || "";
+  playerName = d.playerName || d.name || "";
+  playerId = d.playerId || d.id || playerId || "";
+  playerPassword = d.playerPassword || d.password || playerPassword || "";
+  displayTitle = d.displayTitle || d.playerTitle || d.title || "無名の大名";
+  ownedTitles = Array.isArray(d.ownedTitles) ? d.ownedTitles : [displayTitle];
+  friendIds = Array.isArray(d.friendIds) ? d.friendIds : [];
+  rankingRewardClaims = d.rankingRewardClaims && typeof d.rankingRewardClaims === "object" ? d.rankingRewardClaims : {};
+  gifts = Array.isArray(d.gifts) ? d.gifts : [];
+  normalizeState();
+}
+function buildProfileData(){
+  ensureCurrentProfileMeta();
+  normalizeState();
+  return {
+    gold, baseClick, baseAuto, clickCost, autoCost,
+    collection, party, partyMax, maxExpand,
+    standardCount, gwCount, gwTickets, permanentTickets,
+    gwLoginDay, gwLoginLast, startLoginDay, startLoginLast,
+    playerName, playerId, playerPassword,
+    displayTitle, playerTitle: displayTitle,
+    ownedTitles, friendIds, rankingRewardClaims,
+    gifts
+  };
+}
+function saveProfileData(){
+  ensureCurrentProfileMeta();
+  const data = buildProfileData();
+  safeSetItem(getProfileSaveKey(playerId), JSON.stringify(data));
+  safeSetItem(LEGACY_SAVE_KEY, JSON.stringify(data));
+  safeSetItem(ACTIVE_PROFILE_KEY, playerId);
+  activeProfileKey = playerId;
+  upsertRegistryEntry();
+}
+function loadProfileByIdAndPassword(id, password){
+  const key = getProfileSaveKey(id);
+  const raw = safeGetItem(key);
+  if(!raw) return { ok:false, message:"データが見つかりません。" };
+  try{
+    const data = JSON.parse(raw);
+    if((data.playerPassword || "") !== (password || "")) return { ok:false, message:"パスワードが違います。" };
+    applySaveData(data);
+    playerId = data.playerId || id;
+    playerPassword = data.playerPassword || password;
+    activeProfileKey = playerId;
+    safeSetItem(ACTIVE_PROFILE_KEY, playerId);
+    saveProfileData();
+    return { ok:true };
+  }catch(e){ return { ok:false, message:"データの読み込みに失敗しました。" }; }
+}
+function loadProfileById(id){
+  const raw = safeGetItem(getProfileSaveKey(id));
+  if(!raw) return null;
+  try{ return JSON.parse(raw); }catch(e){ return null; }
+}
+function getAllProfiles(){
+  const registry = readRegistry();
+  const current = playerId ? buildProfileData() : null;
+  const map = new Map();
+  registry.forEach(item => { if(item && item.id) map.set(item.id, { ...item }); });
+  if(current && current.playerId) map.set(current.playerId, { id: current.playerId, name: current.playerName, title: current.displayTitle, gold: Math.floor(current.gold || 0), updatedAt: Date.now(), friends: cloneArray(current.friendIds) });
+  return [...map.values()].sort((a,b)=> (Number(b.gold||0) - Number(a.gold||0)) || (Number(a.updatedAt||0) - Number(b.updatedAt||0)));
+}
+function getCurrentRank(){
+  const list = getAllProfiles();
+  const idx = list.findIndex(v => v.id === playerId);
+  return idx >= 0 ? idx + 1 : 0;
+}
+function rankingTierForRank(rank){
+  if(rank === 1) return { key:"rank1", label:"1位", title:"黄金天下", tickets:10, note:"常設ガチャチケ×10" };
+  if(rank >= 2 && rank <= 10) return { key:"rank10", label:"2〜10位", title:"金将", tickets:5, note:"常設ガチャチケ×5" };
+  if(rank >= 11 && rank <= 50) return { key:"rank50", label:"11〜50位", title:"小判の覇者", tickets:1, note:"常設ガチャチケ×1" };
+  return null;
+}
+function saveProfileSettings(){
+  const newName = (document.getElementById("profileNameInput")?.value || "").trim();
+  const inputTitle = (document.getElementById("profileTitleInput")?.value || "").trim();
+  const selectTitle = (document.getElementById("profileTitleSelect")?.value || "").trim();
+  if(!newName){ alert("プレイヤー名を入力してください。"); return; }
+  playerName = newName;
+  const chosenTitle = inputTitle || selectTitle || displayTitle || "無名の大名";
+  setDisplayTitle(chosenTitle);
+  saveProfileData();
+  update();
+  renderProfile();
+  renderRanking();
+  alert("プレイヤー情報を保存しました。");
+}
+function grantOwnedTitleFromInput(){
+  const inputTitle = (document.getElementById("profileTitleInput")?.value || "").trim();
+  const selectTitle = (document.getElementById("profileTitleSelect")?.value || "").trim();
+  const title = inputTitle || selectTitle;
+  if(!title){ alert("称号を入力してください。"); return; }
+  grantTitle(title);
+  setDisplayTitle(title);
+  saveProfileData();
+  update();
+  renderProfile();
+  alert(`称号「${title}」を所持リストへ追加しました。`);
+}
+function clearSearchResult(){
+  profileSearchResult = null;
+  const box = document.getElementById("profileSearchResult");
+  if(box) box.innerHTML = "検索結果はここに表示されます。";
+}
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>alert("コピーしました。"), ()=>prompt("コピーしてください", text));
+  }else{
+    prompt("コピーしてください", text);
+  }
+}
+function renderFriendList(){
+  const list = document.getElementById("friendList");
+  if(!list) return;
+  const profiles = getAllProfiles();
+  list.innerHTML = "";
+  if(friendIds.length === 0){ list.innerHTML = "<p>まだフレンドはいません。</p>"; return; }
+  friendIds.forEach(id => {
+    const p = profiles.find(v => v.id === id) || loadProfileById(id);
+    const friendGold = p ? Math.floor(Number(p.gold || 0)) : 0;
+    const friendName = p ? (p.name || p.playerName || "不明") : "不明";
+    const friendTitle = p ? (p.title || p.displayTitle || "無称号") : "未登録";
+    const card = document.createElement("div");
+    card.className = "friendCard";
+    card.innerHTML = `
+      <b>${friendName}</b> <span class="inlineBadge">${friendTitle}</span><br>
+      <span class="metaLine">ID: ${id}<br>小判: ${formatGold(friendGold)}</span>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="button copyBtn" onclick="copyText('${id}')">IDコピー</button>
+        <button class="button copyBtn" onclick="removeFriendById('${id}')">解除</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+function addFriendById(friendId){
+  const id = (friendId || "").trim();
+  if(!id) return alert("プレイヤーIDを入力してください。");
+  if(id === playerId) return alert("自分自身はフレンドにできません。");
+  const profile = loadProfileById(id);
+  if(!profile) return alert("そのIDのプレイヤーが見つかりません。");
+  if(!friendIds.includes(id)) friendIds.push(id);
+  saveProfileData();
+  if(Array.isArray(profile.friendIds) && !profile.friendIds.includes(playerId)) profile.friendIds.push(playerId);
+  safeSetItem(getProfileSaveKey(id), JSON.stringify(profile));
+  upsertRegistryEntry();
+  renderProfile();
+  renderRanking();
+  update();
+}
+function removeFriendById(friendId){
+  friendIds = friendIds.filter(id => id !== friendId);
+  const profile = loadProfileById(friendId);
+  if(profile && Array.isArray(profile.friendIds)){
+    profile.friendIds = profile.friendIds.filter(id => id !== playerId);
+    safeSetItem(getProfileSaveKey(friendId), JSON.stringify(profile));
+  }
+  saveProfileData();
+  renderProfile();
+  update();
+}
+function searchPlayerById(){
+  const id = (document.getElementById("profileSearchInput")?.value || "").trim();
+  const resultBox = document.getElementById("profileSearchResult");
+  if(!id){ if(resultBox) resultBox.innerHTML = "プレイヤーIDを入力してください。"; return; }
+  const profiles = getAllProfiles();
+  const p = profiles.find(v => v.id === id) || loadProfileById(id);
+  if(!p){ profileSearchResult = null; if(resultBox) resultBox.innerHTML = "見つかりませんでした。"; return; }
+  profileSearchResult = { id, name: p.name || p.playerName || "不明", title: p.title || p.displayTitle || "無称号", gold: Number(p.gold || 0), friendIds: cloneArray(p.friendIds) };
+  const isFriend = friendIds.includes(id);
+  const isSelf = id === playerId;
+  if(resultBox){
+    resultBox.innerHTML = `
+      <b>${profileSearchResult.name}</b> <span class="inlineBadge">${profileSearchResult.title}</span><br>
+      <span class="metaLine">ID: ${profileSearchResult.id}<br>小判: ${formatGold(profileSearchResult.gold)}<br>状態: ${isSelf ? "自分のプロフィール" : (isFriend ? "フレンド" : "未フレンド")}</span>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="button copyBtn" onclick="copyText('${profileSearchResult.id}')">IDコピー</button>
+        ${isSelf ? '' : `<button class="button copyBtn" onclick="addFriendById('${profileSearchResult.id}')">フレンド追加</button>`}
+      </div>
+    `;
+  }
+  renderProfile();
+}
+function renderRanking(){
+  const list = getAllProfiles();
+  const rankingBox = document.getElementById("rankingList");
+  const note = document.getElementById("rankingRewardNote");
+  const btn = document.getElementById("rankingRewardBtn");
+  if(!rankingBox || !note || !btn) return;
+  rankingBox.innerHTML = "";
+  const myRank = list.findIndex(v => v.id === playerId) + 1;
+  const tier = rankingTierForRank(myRank);
+  note.innerHTML = tier ? `現在の順位: <b>${myRank}位</b><br>受取可能: <b>${tier.label}</b> / ${tier.note}<br>特別称号: <b>${tier.title}</b>` : `現在の順位: <b>${myRank > 0 ? myRank : "未登録"}位</b><br>50位以内でランキング報酬を受け取れます。`;
+  btn.textContent = tier ? `${tier.label}の報酬を受け取る` : "対象外";
+  btn.disabled = !tier || !!rankingRewardClaims[tier.key];
+  const topList = list.slice(0, 50);
+  saveProfileData();
+  update();
+  renderProfile();
+  renderRanking();
+  alert("プレイヤー情報を保存しました。");
+}
+function grantOwnedTitleFromInput(){
+  const inputTitle = (document.getElementById("profileTitleInput")?.value || "").trim();
+  const selectTitle = (document.getElementById("profileTitleSelect")?.value || "").trim();
+  const title = inputTitle || selectTitle;
+  if(!title){ alert("称号を入力してください。"); return; }
+  grantTitle(title);
+  setDisplayTitle(title);
+  saveProfileData();
+  update();
+  renderProfile();
+  alert(`称号「${title}」を所持リストへ追加しました。`);
+}
+function fillRestoreFromCurrent(){
+  if(!playerId){ alert("まだプレイヤーが作成されていません。"); return; }
+  const idEl = document.getElementById("restorePlayerId");
+  const pwEl = document.getElementById("restorePlayerPassword");
+  if(idEl) idEl.value = playerId;
+  if(pwEl) pwEl.value = playerPassword;
+  alert("この端末のIDとパスワードを入力欄へ入れました。");
+}
+function restoreGame(){
+  const id = (document.getElementById("restorePlayerId")?.value || "").trim();
+  const pw = (document.getElementById("restorePlayerPassword")?.value || "").trim();
+  if(!id || !pw){
+    alert("プレイヤーIDとパスワードを入力してください。");
+    return false;
+  }
+  const result = loadProfileByIdAndPassword(id, pw);
+  if(!result.ok){
+    alert(result.message || "復元に失敗しました。");
+    return false;
+  }
+  const tabbar = document.getElementById("tabbar");
+  if(tabbar) tabbar.style.display = "flex";
+  goScreen("main");
+  update();
+  return false;
+}
+
+function createNewProfileFromLogin(name){
+  const safeName = (name || "").trim() || `大名${Math.floor(Math.random() * 9000) + 1000}`;
+  gold = 0; baseClick = 1; baseAuto = 0; clickPower = 1; autoIncome = 0; clickCost = 10; autoCost = 20;
+  collection = {}; party = []; partyMax = 3; maxExpand = 2; standardCount = 0; gwCount = 0; gwTickets = 0; permanentTickets = 0;
+  gwLoginDay = 1; gwLoginLast = ""; startLoginDay = 1; startLoginLast = "";
+  playerName = safeName;
+  playerId = generatePlayerId();
+  playerPassword = generatePassword();
+  displayTitle = "無名の大名";
+  ownedTitles = ["無名の大名"];
+  friendIds = [];
+  rankingRewardClaims = {};
+  gifts = [];
+  ensureGiftDefaults();
+  normalizeState();
+}
+
+function handleTitleLogin(e){
+  if(e) e.preventDefault();
+  startGame();
+  return false;
+}
+
+function handleRestoreLogin(e){
+  if(e) e.preventDefault();
+  return restoreGame();
+}
+
+function startGame(){
+  const input = document.getElementById("titlePlayerName");
+  const name = (input ? input.value : "").trim();
+  if(!name){
+    alert("プレイヤー名を入力してください。");
+    if(input) input.focus();
+    return false;
+  }
+  createNewProfileFromLogin(name);
+  saveProfileData();
+  const tabbar = document.getElementById("tabbar");
+  if(tabbar) tabbar.style.display = "flex";
+  goScreen("main");
+  update();
+  return false;
+}
+
+function useGuestName(){
+  const guestName = `大名${Math.floor(Math.random()*9000)+1000}`;
+  const input = document.getElementById("titlePlayerName");
+  if(input) input.value = guestName;
+  createNewProfileFromLogin(guestName);
+  saveProfileData();
+  const tabbar = document.getElementById("tabbar");
+  if(tabbar) tabbar.style.display = "flex";
+  goScreen("main");
+  update();
+}
+
+function enterTitle(){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById("titleScreen").classList.add("show");
+  document.getElementById("tabbar").style.display = "none";
+}
+
+window.handleTitleLogin = handleTitleLogin;
+window.handleRestoreLogin = handleRestoreLogin;
+window.startGame = startGame;
+window.useGuestName = useGuestName;
+window.restoreGame = restoreGame;
+window.fillRestoreFromCurrent = fillRestoreFromCurrent;
+
+const loginFormEl = document.getElementById("loginForm");
+if(loginFormEl){
+  loginFormEl.addEventListener("submit", handleTitleLogin);
+}
+const restoreFormEl = document.getElementById("restoreForm");
+if(restoreFormEl){
+  restoreFormEl.addEventListener("submit", handleRestoreLogin);
+}
+
+const titlePlayerNameEl = document.getElementById("titlePlayerName");
+if(titlePlayerNameEl){
+  titlePlayerNameEl.addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      e.preventDefault();
+      startGame();
+    }
+  });
+}
+
+/* =========================
+   Characters
+========================= */
+const chars = [
+  {name:"徳川家康", title:"泰平の世", rarity:"SSR", type:"support", tag:"tokugawa", rate:0.125, gwRate:0.125, permRate:0.060, value:0,
+    trait0:"泰平補正：徳川武将の効果+25%。",
+    trait3:"徳川家中統率：徳川武将の効果+35%。",
+    trait5:"泰平完成：徳川武将の効果+50%、徳川2名以上でさらに全体+10%。",
+    skill:"家中の総大将。徳川系をまとめて底上げする支援型。"},
+  {name:"徳川秀忠", title:"武家諸法度", rarity:"SSR", type:"support", tag:"tokugawa", rate:0.125, gwRate:0.125, permRate:0.060, value:0,
+    trait0:"幕府補佐：徳川武将の効果+12%。家康がいると自分の効果が1.2倍。",
+    trait3:"家康同編成：徳川武将の効果+20%。家康がいると家康以外の徳川武将もさらに+10%。",
+    trait5:"法度の定着：家康がいる時、家康の効果+20%、秀忠自身の徳川補正+30%。",
+    skill:"家康より少し控えめだが、家康と組むと化ける支援型。"},
+  {name:"本多忠勝", title:"無傷の臣", rarity:"SSR", type:"click", tag:"tokugawa", rate:0.125, gwRate:0.125, permRate:0.060, value:5,
+    trait0:"蜻蛉切の一閃：クリック+5。",
+    trait3:"一騎駆け：クリック+8、徳川2名以上でさらに+10%。",
+    trait5:"不敗の槍：クリック+12、10%でクリック2倍。",
+    skill:"クリック担当の主力。シンプルに強い。"},
+  {name:"井伊直政", title:"井伊の赤備え", rarity:"SSR", type:"auto", tag:"tokugawa", rate:0.125, gwRate:0.125, permRate:0.060, value:3,
+    trait0:"赤備え先鋒：自動+3。",
+    trait3:"猛進：自動+5、徳川2名以上でさらに+1。",
+    trait5:"赤鬼の圧：自動+8、10%で自動2倍。",
+    skill:"放置火力の柱。徳川編成でより強い。"},
+  {name:"織田信長", title:"第六天魔王", rarity:"SSR", type:"click", tag:"oda", rate:0.010, gwRate:0.010, permRate:0.060, value:6,
+    trait0:"破壊の号令：クリック+6。",
+    trait3:"兵站崩し：クリック+10、他のSSRがいると+5%。",
+    trait5:"魔王の威圧：クリック+15、10%でクリック2倍。",
+    skill:"攻撃寄りの高火力SSR。"},
+  {name:"真田幸村", title:"真田の赤備え", rarity:"SSR", type:"auto", tag:"sanada", rate:0.010, gwRate:0.010, permRate:0.060, value:4,
+    trait0:"軍神の気迫：自動+4。",
+    trait3:"赤備えの猛進：自動+6、SSRが2名以上でさらに+10%。",
+    trait5:"真田丸の守り：自動+10、10%で自動2倍。",
+    skill:"徳川以外の高火力SSR。"},
+  {name:"前田慶次", title:"天下一の傾奇者", rarity:"SSR", type:"click", tag:"maeda", rate:0.010, gwRate:0.010, permRate:0.060, value:5,
+    trait0:"傾奇の一撃：クリック+5。",
+    trait3:"花の慶次：クリック+8、SSRが2名以上でさらに+10%。",
+    trait5:"粋の極み：クリック+12、10%でクリック2倍。",
+    skill:"華のある高火力SSR。"},
+  {name:"豊臣秀吉", title:"出世頭", rarity:"SSR", type:"click", tag:"toyotomi", loginOnly:true, rate:0.010, gwRate:0.010, permRate:0.060, value:1,
+    trait0:"出世の号令：全武将の効果+10%、クリック+1。",
+    trait3:"天下人の才：全武将の効果+15%、クリック+2。",
+    trait5:"太閤の威光：全武将の効果+25%、10%でクリック2倍。",
+    skill:"出世で全体を押し上げる万能支援。"},
+  {name:"榊原康政", rarity:"SR", type:"auto", tag:"tokugawa", rate:8, gwRate:8, permRate:8, value:2,
+    trait0:"朱槍の手堅さ：自動+2。",
+    trait3:"槍働きの熟練：自動+4、徳川3名以上でさらに+1。",
+    trait5:"赤備えの要：自動+6、徳川武将の自動効果+10%。",
+    skill:"徳川放置枠の優等生。"},
+  {name:"酒井忠次", rarity:"SR", type:"click", tag:"tokugawa", rate:7, gwRate:7, permRate:7, value:2,
+    trait0:"先鋒の采配：クリック+2。",
+    trait3:"老練の守り：クリック+4、家康がいるとさらに+1。",
+    trait5:"三河の古株：クリック+6、徳川2名以上で全体+5%。",
+    skill:"地味に頼れる前線担当。"},
+  {name:"鳥居元忠", rarity:"SR", type:"auto", tag:"tokugawa", rate:7, gwRate:7, permRate:7, value:3,
+    trait0:"忠義の備え：自動+3。",
+    trait3:"籠城補正：自動+5、家康がいると自動+10%。",
+    trait5:"最後の盾：自動+8、編成3名以上でさらに+8%。",
+    skill:"守りを固める徳川の実務派。"},
+  {name:"大久保忠世", rarity:"SR", type:"click", tag:"tokugawa", rate:6, gwRate:6, permRate:6, value:3,
+    trait0:"采配の妙：クリック+3。",
+    trait3:"陣形整理：クリック+5、徳川2名以上でさらに+1。",
+    trait5:"家中の縁の下：クリック+7、徳川武将の効果+8%。",
+    skill:"派手さはないが編成で効く。"},
+  {name:"安藤直次", rarity:"SR", type:"auto", tag:"tokugawa", rate:6, gwRate:6, permRate:6, value:2,
+    trait0:"実務の補佐：自動+2。",
+    trait3:"幕府の下支え：自動+4、家康か秀忠がいると+10%。",
+    trait5:"政務熟達：自動+6、徳川支援効果+10%。",
+    skill:"秀忠・家康周りで活きる裏方。"},
+  {name:"松平康重", rarity:"SR", type:"click", tag:"tokugawa", rate:5, gwRate:5, permRate:5, value:2,
+    trait0:"分家の采配：クリック+2。",
+    trait3:"一族の結束：クリック+4、徳川2名以上で+8%。",
+    trait5:"家中の連携：クリック+6、徳川武将の効果+8%。",
+    skill:"徳川内の連携を底上げする。"},
+  {name:"木下利玄", rarity:"SR", type:"click", tag:"toyotomi", rate:5, gwRate:5, permRate:5, value:2,
+    trait0:"地味な一振り：クリック+2。",
+    trait3:"兵站係の勘：クリック+4。",
+    trait5:"裏方の技：クリック+6、全体+3%。",
+    skill:"秀吉系を補佐する控えめなSR。"},
+  {name:"小笠原秀政", rarity:"SR", type:"auto", tag:"ogasawara", rate:8, gwRate:8, permRate:8, value:3,
+    trait0:"守りの所作：自動+3。",
+    trait3:"礼法の強み：自動+5。",
+    trait5:"静かな統率：自動+8、編成全体+3%。",
+    skill:"低知名度でも堅実な伸び。"},
+  {name:"横田尹松", rarity:"SR", type:"auto", tag:"tokugawa", rate:8, gwRate:8, permRate:8, value:2,
+    trait0:"帳面の才：自動+2。",
+    trait3:"内政の要：自動+4。",
+    trait5:"地味な加速：自動+6、徳川武将+5%。",
+    skill:"内政の穴埋めに強い。"},
+  {name:"久世広之", rarity:"SR", type:"click", tag:"kuze", rate:7, gwRate:7, permRate:7, value:2,
+    trait0:"控えめな一閃：クリック+2。",
+    trait3:"膝詰めの強さ：クリック+4。",
+    trait5:"細かな修正：クリック+6、全体+4%。",
+    skill:"小粒だが手堅い。"},
+  {name:"本多重次", rarity:"SR", type:"auto", tag:"tokugawa", rate:7, gwRate:7, permRate:7, value:2,
+    trait0:"鬼作左の執念：自動+2。",
+    trait3:"厳格な号令：自動+4。",
+    trait5:"老練の締め付け：自動+7、徳川武将+6%。",
+    skill:"熱いが高知名度すぎないSR枠。"},
+  {name:"足軽", rarity:"R", type:"auto", tag:"mob", rate:10, gwRate:10, permRate:10, value:1,
+    trait0:"人数合わせ：自動+1。",
+    trait3:"足並み：自動+2。",
+    trait5:"集団行動：自動+4、10%で自動2倍。",
+    skill:"最安定の放置素材。"},
+  {name:"天野康景", rarity:"R", type:"auto", tag:"tokugawa", rate:10, gwRate:10, permRate:10, value:1,
+    trait0:"影の支え：自動+1。",
+    trait3:"地味な粘り：自動+3、家康がいると+5%。",
+    trait5:"裏方の熟達：自動+5、徳川支援効果+5%。",
+    skill:"目立たないが堅実に伸びる。"},
+  {name:"菅沼定盈", rarity:"R", type:"click", tag:"tokugawa", rate:9, gwRate:9, permRate:9, value:1,
+    trait0:"小勢の矢：クリック+1。",
+    trait3:"地の利：クリック+2、徳川2名以上で+5%。",
+    trait5:"持久戦：クリック+4、10%でクリック2倍。",
+    skill:"少数戦向けの小回り型。"},
+  {name:"渡辺守綱", rarity:"R", type:"click", tag:"tokugawa", rate:9, gwRate:9, permRate:9, value:1,
+    trait0:"堅実な槍：クリック+1。",
+    trait3:"前線維持：クリック+3、徳川が3名以上で+1。",
+    trait5:"現場の踏ん張り：クリック+5、徳川武将の効果+5%。",
+    skill:"序盤の穴埋めに強い。"},
+  {name:"石川康通", rarity:"R", type:"auto", tag:"tokugawa", rate:10, gwRate:10, permRate:10, value:1,
+    trait0:"補佐の一手：自動+1。",
+    trait3:"調整役：自動+2、家康がいると+5%。",
+    trait5:"陰の調律：自動+4、徳川武将の効果+5%。",
+    skill:"控えめだが編成全体に効く。"},
+  {name:"中根正照", rarity:"R", type:"click", tag:"tokugawa", rate:10, gwRate:10, permRate:10, value:1,
+    trait0:"真面目な一押し：クリック+1。",
+    trait3:"小さな補強：クリック+2。",
+    trait5:"地味な粘り：クリック+4、全体+2%。",
+    skill:"序盤のクリック補助に便利。"},
+  {name:"三浦正勝", rarity:"R", type:"click", tag:"tokugawa", rate:9, gwRate:9, permRate:9, value:1,
+    trait0:"一打の軽さ：クリック+1。",
+    trait3:"足元の安定：クリック+2。",
+    trait5:"薄く広い支援：クリック+3、全体+2%。",
+    skill:"地味に手数を増やす。"},
+  {name:"神尾元勝", rarity:"R", type:"auto", tag:"tokugawa", rate:10, gwRate:10, permRate:10, value:1,
+    trait0:"小さな内政：自動+1。",
+    trait3:"帳尻合わせ：自動+2。",
+    trait5:"末端の補強：自動+3、全体+2%。",
+    skill:"内政の隙間を埋める。"},
+  {name:"服部保長", rarity:"R", type:"click", tag:"tokugawa", rate:9, gwRate:9, permRate:9, value:1,
+    trait0:"忍びの一歩：クリック+1。",
+    trait3:"静かな加速：クリック+2。",
+    trait5:"影の手数：クリック+3、10%でクリック2倍。",
+    skill:"派手さ控えめのR枠。"}
+];
+
+const charsByName = Object.fromEntries(chars.map(c=>[c.name,c]));
+
+const BANNERS = {
+  permanent: {
+    featured: ["織田信長","真田幸村","前田慶次"],
+    allSSR: ["織田信長","真田幸村","前田慶次"],
+    allowsPity: false,
+    ticketName: "常設札",
+    title: "🏯 常設ガチャ",
+    subtitle: "SSRは織田信長・真田幸村・前田慶次 / SR・Rは全共通",
+    date: "小判でも常設札でも回せる"
+  },
+  standard: {
+    featured: ["本多忠勝","井伊直政"],
+    allSSR: ["本多忠勝","井伊直政","織田信長","真田幸村","前田慶次"],
+    allowsPity: true,
+    ticketName: null,
+    title: "🎰 徳川忠臣ガチャ",
+    subtitle: "PU表示は本多忠勝・井伊直政のみ / SSR3％・SR39％・R58％",
+    date: "100回目はPU30倍 / 200回目はPU50倍 + SSR確定"
+  },
+  gw: {
+    featured: ["徳川家康","徳川秀忠"],
+    allSSR: ["徳川家康","徳川秀忠","織田信長","真田幸村","前田慶次"],
+    allowsPity: true,
+    ticketName: "GW札",
+    title: "🎏 GW記念ガチャ",
+    subtitle: "PU表示は徳川家康・徳川秀忠のみ / SSR3％・SR39％・R58％",
+    date: "100回目はPU30倍 / 200回目はPU50倍 + SSR確定"
+  }
+};
+
+const BASE_RATE_TEXT = { SSR: 3.000, SR: 39.000, R: 58.000 };
+
+const START_LOGIN_REWARDS = [
+  {label:"小判+1000", apply:()=>rewardGold(1000)},
+  {label:"小判+1000", apply:()=>rewardGold(1000)},
+  {label:"小判+2000", apply:()=>rewardGold(2000)},
+  {label:"豊臣秀吉×1", apply:()=>rewardChar("豊臣秀吉",1)},
+  {label:"小判+2000", apply:()=>rewardGold(2000)},
+  {label:"小判+3000", apply:()=>rewardGold(3000)},
+  {label:"豊臣秀吉×1", apply:()=>rewardChar("豊臣秀吉",1)},
+  {label:"小判+3000", apply:()=>rewardGold(3000)},
+  {label:"小判+5000", apply:()=>rewardGold(5000)},
+  {label:"豊臣秀吉×2", apply:()=>rewardChar("豊臣秀吉",2)},
+  {label:"小判+5000", apply:()=>rewardGold(5000)},
+  {label:"小判+8000", apply:()=>rewardGold(8000)},
+  {label:"豊臣秀吉×2", apply:()=>rewardChar("豊臣秀吉",2)},
+  {label:"小判+8000", apply:()=>rewardGold(8000)},
+  {label:"小判+10000", apply:()=>rewardGold(10000)},
+  {label:"豊臣秀吉×1", apply:()=>rewardChar("豊臣秀吉",1)},
+  {label:"小判+12000", apply:()=>rewardGold(12000)},
+  {label:"小判+15000", apply:()=>rewardGold(15000)},
+  {label:"豊臣秀吉×2", apply:()=>rewardChar("豊臣秀吉",2)},
+  {label:"小判+20000", apply:()=>rewardGold(20000)}
+];
+const GW_LOGIN_REWARDS = Array.from({length:5},()=>({label:"GW札×10", apply:()=>rewardGWTickets(10)}));
+
+/* =========================
+   Core helpers
+========================= */
+function displayCharName(c){
+  if(!c) return "";
+  return c.title ? `【${c.title}】${c.name}` : c.name;
+}
+
+function awakenLevel(name){
+  const entry = collection[name];
+  if(!entry) return 0;
+  let dup = Math.max(0, (entry.count || 0) - 1);
+  let lv = 0;
+  for(let i=1;i<=5;i++){
+    if(dup >= awakenNeed[i]){ dup -= awakenNeed[i]; lv = i; }
+    else break;
+  }
+  return lv;
+}
+
+function awakenLabel(lv){ return lv >= 5 ? "5凸" : lv >= 3 ? "3凸" : lv >= 1 ? `${lv}凸` : "0凸"; }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function weightedPick(list, weightKey){
+  const total = list.reduce((a,c)=>a + Number(c[weightKey] ?? 0), 0);
+  if(total <= 0) return list[Math.floor(Math.random() * list.length)];
+  let roll = Math.random() * total;
+  for(const c of list){
+    roll -= Number(c[weightKey] ?? 0);
+    if(roll <= 0) return c;
+  }
+  return list[list.length - 1];
+}
+
+function sumRates(list, key, rarity){
+  return list.filter(c=>!rarity || c.rarity === rarity).reduce((a,c)=>a + Number(c[key] ?? 0), 0);
+}
+
+function closeModal(){ document.getElementById("modal").style.display = "none"; }
+function setGachaButtonsDisabled(disabled){
+  document.querySelectorAll('#gachaHub .button, #gachaHub .navbtn').forEach(btn => btn.disabled = disabled);
+}
+
+function showDetail(name){
+  const c = charsByName[name];
+  if(!c) return;
+  const lv = awakenLevel(name);
+  const inParty = party.includes(name);
+  const actionText = inParty ? "編成から外す" : "編成に追加";
+  const action = inParty ? () => { removeFromPartyByName(name); closeModal(); } : () => { addToParty(name); closeModal(); };
+
+  document.getElementById("modalContent").innerHTML = `
+    <div class="traitBox">
+      <h4>${displayCharName(c)}</h4>
+      <div>レア: ${c.rarity} <span class="badge">${awakenLabel(lv)}</span></div>
+      <div style="margin-top:8px;">${c.skill || ""}</div>
+      <div class="divider"></div>
+      <div class="traitGrid">
+        <div class="traitItem"><b>0凸</b><br>${c.trait0 || "なし"}</div>
+        <div class="traitItem"><b>3凸</b><br>${c.trait3 || "なし"}</div>
+        <div class="traitItem"><b>5凸</b><br>${c.trait5 || "なし"}</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <button class="button" id="modalActionBtn">${actionText}</button>
+      <button class="button" onclick="closeModal()">閉じる</button>
+    </div>
+  `;
+  document.getElementById("modalActionBtn").onclick = action;
+  document.getElementById("modal").style.display = "flex";
+}
+
+/* =========================
+   Banner/pity logic
+========================= */
+function pityNextStep(count){
+  return (count % 200) + 1;
+}
+function pityInfoText(count){
+  const next = pityNextStep(count);
+  if(next === 200) return `【200回目】PU確率50倍 / SSR確定`;
+  if(next >= 100) return `【${next}回目】PU確率50倍まであと${200 - next}回`;
+  return `【${next}回目】PU確率30倍まであと${100 - next}回`;
+}
+function bannerFeaturedNames(banner){ return BANNERS[banner].featured; }
+function bannerAllowedSSRNames(banner){ return BANNERS[banner].allSSR; }
+function bannerRarityRoll(banner){
+  const r = Math.random() * 100;
+  if(r < 3) return "SSR";
+  if(r < 42) return "SR";
+  return "R";
+}
+function bannerCurrentCount(banner){ return banner === "gw" ? gwCount : standardCount; }
+function bannerSetCount(banner, value){ if(banner === "gw") gwCount = value; else if(banner === "standard") standardCount = value; }
+function bannerAdvanceCount(banner){
+  const current = bannerCurrentCount(banner);
+  const next = current + 1;
+  if(next >= 200){
+    bannerSetCount(banner, 0);
+    return 200;
+  }
+  bannerSetCount(banner, next);
+  return next;
+}
+function bannerPityMultiplier(step){
+  if(step >= 200) return 50;
+  if(step >= 100) return 30;
+  return 1;
+}
+function bannerShouldGuaranteeSSR(step){ return step >= 200; }
+
+function pickSSRForBanner(banner, step){
+  const list = chars.filter(c => c.rarity === "SSR" && bannerAllowedSSRNames(banner).includes(c.name));
+  const featured = bannerFeaturedNames(banner);
+  const mult = bannerPityMultiplier(step);
+  const weights = list.map(c => ({
+    ...c,
+    _w: (featured.includes(c.name) ? 1 : 0.05) * (featured.includes(c.name) ? mult : 1)
+  }));
+  return weightedPick(weights, "_w");
+}
+function pickSRForBanner(){ return weightedPick(chars.filter(c=>c.rarity === "SR"), "rate"); }
+function pickRForBanner(){ return weightedPick(chars.filter(c=>c.rarity === "R"), "rate"); }
+
+function getGateType(result, banner){
+  if(result && result._gateType) return result._gateType;
+  const featured = bannerFeaturedNames(banner);
+  if(result.rarity === "SSR" && featured.includes(result.name)) return "gold";
+  if(result.rarity === "SSR") return "red";
+  return "wood";
+}
+function getFreezeLabel(result, banner){
+  if(result && result._reverse) return "逆転";
+  const featured = bannerFeaturedNames(banner);
+  if(result.rarity === "SSR" && featured.includes(result.name)) return "PU確定";
+  if(result.rarity === "SSR") return "SSR";
+  return "好機";
+}
+function getRevealBigText(result, banner){
+  if(result.rarity === "SSR") return "出陣";
+  return "好機";
+}
+function getResultTop(result, banner){
+  const featured = bannerFeaturedNames(banner);
+  if(result && result._reverse) return "逆転SSR";
+  if(result.rarity === "SSR" && featured.includes(result.name)) return "PU確定";
+  if(result.rarity === "SSR") return "SSR確定";
+  if(result.rarity === "SR") return "SR確定";
+  return "R確定";
+}
+
+async function playGachaAnimation({gateType, result, banner, reverse=false, freezeLabel="好機"}){
+  const overlay = document.getElementById("gachaAnimOverlay");
+  const gate = document.getElementById("gachaAnimGate");
+  const state = document.getElementById("gachaAnimState");
+  const freezeText = document.getElementById("gachaFreezeText");
+  const resultCard = document.getElementById("gachaAnimResultCard");
+  const resultTop = document.getElementById("gachaAnimResultTop");
+  const resultName = document.getElementById("gachaAnimResultName");
+  const resultMeta = document.getElementById("gachaAnimResultMeta");
+
+  overlay.style.display = "flex";
+  overlay.className = `gachaAnimOverlay show gateType-${gateType}`;
+  void overlay.offsetWidth;
+
+  gate.className = `gachaGate gateType-${gateType}`;
+  resultCard.style.opacity = "0";
+  resultCard.style.transform = "translateY(18px) scale(.94)";
+  state.textContent = "城の影...";
+  freezeText.textContent = freezeLabel;
+  freezeText.style.opacity = "0";
+
+  await sleep(160);
+  overlay.classList.add("dawn");
+  state.textContent = "夜明け";
+  await sleep(360);
+
+  overlay.classList.add("present");
+  state.textContent = "門前";
+  await sleep(220);
+
+  overlay.classList.add("freeze");
+  freezeText.textContent = freezeLabel;
+  state.textContent = freezeLabel;
+  await sleep(360);
+  overlay.classList.remove("freeze");
+
+  overlay.classList.add("open");
+  state.textContent = result.rarity === "SSR" ? "出陣" : "好機";
+  if(reverse) overlay.classList.add("reverse");
+  await sleep(170);
+
+  overlay.classList.add("ride");
+  state.textContent = "騎馬出現";
+  await sleep(620);
+
+  overlay.classList.add("reveal");
+  state.textContent = getRevealBigText(result, banner);
+  resultTop.textContent = getResultTop(result, banner);
+  resultName.textContent = displayCharName(result);
+  resultMeta.textContent = reverse ? "木の門から逆転" : (result.rarity === "SSR" ? "SSR" : result.rarity);
+  resultCard.className = `gachaResultCard ${result.rarity.toLowerCase()}`;
+  await sleep(760);
+
+  overlay.className = "gachaAnimOverlay";
+  overlay.style.display = "none";
+}
+
+function batchSummary(results){
+  const ssr = results.filter(r=>r.rarity==="SSR").length;
+  const sr = results.filter(r=>r.rarity==="SR").length;
+  const rr = results.filter(r=>r.rarity==="R").length;
+  return `SSR ${ssr} / SR ${sr} / R ${rr}`;
+}
+function selectLeadResult(results, banner){
+  const featured = bannerFeaturedNames(banner);
+  const pu = results.find(r=>r.rarity==="SSR" && featured.includes(r.name));
+  if(pu) return pu;
+  const ssr = results.find(r=>r.rarity==="SSR");
+  if(ssr) return ssr;
+  const sr = results.find(r=>r.rarity==="SR");
+  if(sr) return sr;
+  return results[0];
+}
+
+async function drawBanner(banner, n, mode){
+  if(gachaAnimating) return;
+  gachaAnimating = true;
+  setGachaButtonsDisabled(true);
+  try{
+    if(mode === "ticket"){
+      if(banner === "permanent"){
+        if(permanentTickets < n){ alert("常設ガチャチケが足りない！"); return; }
+        permanentTickets -= n;
+      }else if(banner === "gw"){
+        if(gwTickets < n){ alert("GW登用札が足りない！"); return; }
+        gwTickets -= n;
+      }else{
+        alert("このガチャは札対応していない！");
+        return;
+      }
+    }else{
+      if(gold < 1000 * n){ alert("小判が足りない！"); return; }
+      gold -= 1000 * n;
+    }
+
+    const results = [];
+    for(let i=0;i<n;i++){
+      const step = banner === "permanent" ? 0 : bannerAdvanceCount(banner);
+      let rarity = banner === "permanent" ? bannerRarityRoll(banner) : (bannerShouldGuaranteeSSR(step) ? "SSR" : bannerRarityRoll(banner));
+      let res;
+      if(rarity === "SSR") res = pickSSRForBanner(banner, step);
+      else if(rarity === "SR") res = pickSRForBanner();
+      else res = pickRForBanner();
+
+      // 木の門の「好機」からの逆転SSRを追加
+      let reverse = false;
+      if(rarity === "R" && banner !== "permanent" && Math.random() < 0.08){
+        reverse = true;
+        res = pickSSRForBanner(banner, step);
+        res._reverse = true;
+        res._gateType = "wood";
+      }else{
+        res._gateType = rarity === "SSR" ? (bannerFeaturedNames(banner).includes(res.name) ? "gold" : "red") : "wood";
+      }
+
+      results.push(res);
+      addChar(res.name, 1);
+    }
+
+    const lead = selectLeadResult(results, banner);
+    const gateType = getGateType(lead, banner);
+    const reverse = !!lead._reverse;
+    const freezeLabel = getFreezeLabel(lead, banner);
+
+    await playGachaAnimation({gateType, result:lead, banner, reverse, freezeLabel});
+
+    const text = `${batchSummary(results)}<br>${results.map(r=>displayCharName(r)).join("<br>")}`;
+    if(banner === "permanent") document.getElementById("permanentResult").innerHTML = text;
+    if(banner === "standard") document.getElementById("gachaResult").innerHTML = text;
+    if(banner === "gw") document.getElementById("gwResult").innerHTML = text;
+    update();
+    save();
+  } finally {
+    gachaAnimating = false;
+    setGachaButtonsDisabled(false);
+  }
+}
+
+/* =========================
+   Stats / party / inventory
+========================= */
+function addChar(name, count=1){
+  if(!collection[name]) collection[name] = {count:0};
+  collection[name].count += count;
+  update();
+}
+function addToParty(name){
+  if(party.includes(name)) return;
+  if(party.length >= partyMax){ alert("編成枠が足りない！"); return; }
+  party.push(name);
+  calcStats();
+}
+function removeFromPartyByName(name){
+  const idx = party.indexOf(name);
+  if(idx >= 0){ party.splice(idx,1); calcStats(); }
+}
+function upgradeClick(){
+  if(gold >= clickCost){
+    gold -= clickCost;
+    baseClick++;
+    clickCost = Math.floor(clickCost * 1.5);
+    calcStats();
+  }
+}
+function buyAuto(){
+  if(gold >= autoCost){
+    gold -= autoCost;
+    baseAuto++;
+    autoCost = Math.floor(autoCost * 1.7);
+    calcStats();
+  }
+}
+function expandParty(){
+  if(maxExpand <= 0) return;
+  const cost = (maxExpand === 2) ? 10000 : 20000;
+  if(gold < cost){ alert("小判が足りない！"); return; }
+  gold -= cost;
+  partyMax++;
+  maxExpand--;
+  update();
+  save();
+}
+function clickGold(){
+  let val = clickPower;
+  for(const n of party){
+    if(awakenLevel(n) >= 5 && Math.random() < 0.1) val *= 2;
+  }
+  gold += val;
+  update();
+}
+setInterval(()=>{ gold += autoIncome; update(); }, 1000);
+
+function calcStats(){
+  clickPower = baseClick;
+  autoIncome = baseAuto;
+  const names = [...party];
+  const hasIeyasu = names.includes("徳川家康");
+  const hasHidetada = names.includes("徳川秀忠");
+  const tokugawaCount = names.filter(n => charsByName[n] && charsByName[n].tag === "tokugawa").length;
+
+  if(tokugawaCount >= 2){ clickPower *= 1.2; autoIncome *= 1.2; }
+  if(tokugawaCount >= 3){ clickPower *= 1.5; autoIncome *= 1.5; }
+  if(tokugawaCount >= 4){ clickPower *= 2.0; autoIncome *= 2.0; }
+
+  for(const name of names){
+    const c = charsByName[name];
+    if(!c || c.type === "support") continue;
+    const lv = awakenLevel(name);
+    let val = c.value * (1 + lv * 0.35);
+    if(c.tag === "tokugawa" && hasIeyasu && name === "徳川秀忠") val *= 1.15;
+    if(c.tag === "tokugawa" && hasHidetada && name === "徳川家康") val *= 1.10;
+    if(c.type === "click") clickPower += val;
+    if(c.type === "auto") autoIncome += val;
+    if(lv >= 3){
+      if(c.type === "click") clickPower += 1;
+      if(c.type === "auto") autoIncome += 1;
+    }
+    if(lv >= 5){
+      if(c.type === "click") clickPower += 1;
+      if(c.type === "auto") autoIncome += 1;
+    }
+  }
+
+  if(hasIeyasu && hasHidetada){
+    clickPower *= 1.08;
+    autoIncome *= 1.08;
+  }
+  update();
+  save();
+}
+
+/* =========================
+   Gifts
+========================= */
+function claimGiftById(id){
+  const gift = gifts.find(g=>g.id === id);
+  if(!gift || gift.claimed) return;
+  applyGift(gift);
+  gift.claimed = true;
+  update();
+  save();
+}
+function applyGift(gift){
+  if(gift.type === "gold") gold += gift.amount || 0;
+  if(gift.type === "gwTickets") gwTickets += gift.amount || 0;
+  if(gift.type === "permanentTickets") permanentTickets += gift.amount || 0;
+  if(gift.type === "char") addChar(gift.charName, gift.amount || 1);
+}
+function claimAllGifts(confirmOnly=false){
+  const pending = gifts.filter(g=>!g.claimed);
+  if(confirmOnly){
+    alert(`未受取の贈り物は ${pending.length} 件です。`);
+    return;
+  }
+  if(pending.length === 0){
+    alert("受け取れる贈り物はありません。");
+    return;
+  }
+  pending.forEach(g=>{
+    applyGift(g);
+    g.claimed = true;
+  });
+  update();
+  save();
+}
+function renderGifts(){
+  const list = document.getElementById("giftList");
+  const status = document.getElementById("giftStatus");
+  if(!list || !status) return;
+  list.innerHTML = "";
+  const pending = gifts.filter(g=>!g.claimed);
+  status.innerHTML = `プレイヤー名: <b>${playerName || "未設定"}</b><br>未受取: <b>${pending.length}</b>件`;
+  if(gifts.length === 0){
+    list.innerHTML = "<p>贈り物はありません。</p>";
+    return;
+  }
+  gifts.forEach(g=>{
+    const d = document.createElement("div");
+    d.className = `giftCard ${g.claimed ? "claimed" : ""}`;
+    d.innerHTML = `
+      <h4>${g.title}</h4>
+      <div class="giftMeta">${g.detail}</div>
+      <div class="giftMeta">状態: ${g.claimed ? "受取済み" : "未受取"}</div>
+      <div style="margin-top:8px;">
+        <button class="button" ${g.claimed ? "disabled" : ""} onclick="claimGiftById('${g.id}')">${g.claimed ? "受取済み" : "受け取る"}</button>
+      </div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+/* =========================
+   Rendering
+========================= */
+function renderCollection(){
+  const el = document.getElementById("collection");
+  el.innerHTML = "";
+  chars.forEach(c=>{
+    const owned = collection[c.name]?.count || 0;
+    const lv = awakenLevel(c.name);
+    const d = document.createElement("div");
+    d.className = `card ${c.rarity.toLowerCase()} ${owned ? "" : "locked"}`;
+    d.innerHTML = `${displayCharName(c)}<br>${c.rarity} / ${owned ? ("所持:"+owned+"枚") : "未所持"}<br>${awakenLabel(lv)}`;
+    d.onclick = ()=>showDetail(c.name);
+    el.appendChild(d);
+  });
+}
+
+function renderParty(){
+  const el = document.getElementById("party");
+  el.innerHTML = "";
+  if(party.length === 0){ el.innerHTML = "<p>まだ編成がない</p>"; return; }
+  party.forEach(name=>{
+    const c = charsByName[name];
+    const d = document.createElement("div");
+    d.className = `card selected ${c.rarity.toLowerCase()}`;
+    d.innerHTML = `${displayCharName(c)}<br>${awakenLabel(awakenLevel(name))}`;
+    d.onclick = ()=>showDetail(name);
+    el.appendChild(d);
+  });
+}
+
+function renderBonus(){
+  const el = document.getElementById("bonus");
+  const tokugawaCount = party.filter(n => charsByName[n] && charsByName[n].tag === "tokugawa").length;
+  const lines = [];
+  let formation = "なし";
+  if(tokugawaCount >= 2) formation = "🔥 徳川編成Lv1 (1.2倍)";
+  if(tokugawaCount >= 3) formation = "🔥 徳川編成Lv2 (1.5倍)";
+  if(tokugawaCount >= 4) formation = "🔥 徳川編成Lv3 (2倍)";
+  lines.push(formation);
+  if(party.includes("徳川家康")) lines.push("泰平の世：徳川武将効果UP");
+  if(party.includes("徳川秀忠")) lines.push("武家諸法度：家康と同時で強化");
+  if(party.includes("豊臣秀吉")) lines.push("出世頭：全体効果UP");
+  el.innerHTML = lines.join("<br>");
+}
+
+function renderPermanentInfo(){
+  document.getElementById("permanentInfo").textContent = "🎯 常設SSR：織田信長 / 真田幸村 / 前田慶次";
+}
+function renderPuInfo(){
+  document.getElementById("puInfo").textContent = `🎯 ${pityInfoText(standardCount)} / SSR3％ SR39％ R58％`;
+}
+function renderGWInfo(){
+  document.getElementById("gwInfo").textContent = `GW登用札:${gwTickets}枚 / 小判:${Math.floor(gold)} / ${pityInfoText(gwCount)}`;
+}
+
+function renderPermanentPickup(){
+  const el = document.getElementById("permanentPickup");
+  el.innerHTML = "";
+  BANNERS.permanent.featured.forEach(name=>{
+    const c = charsByName[name];
+    const d = document.createElement("div");
+    d.className = "card ssr";
+    d.innerHTML = `<b>${displayCharName(c)}</b>`;
+    d.onclick = ()=>showDetail(name);
+    el.appendChild(d);
+  });
+}
+function renderPickup(){
+  const el = document.getElementById("pickup");
+  el.innerHTML = "";
+  BANNERS.standard.featured.forEach(name=>{
+    const c = charsByName[name];
+    const d = document.createElement("div");
+    d.className = "card ssr";
+    d.innerHTML = `<b>${displayCharName(c)}</b>`;
+    d.onclick = ()=>showDetail(name);
+    el.appendChild(d);
+  });
+}
+function renderGWPickup(){
+  const el = document.getElementById("gwPickup");
+  el.innerHTML = "";
+  BANNERS.gw.featured.forEach(name=>{
+    const c = charsByName[name];
+    const d = document.createElement("div");
+    d.className = "card ssr";
+    d.innerHTML = `<b>${displayCharName(c)}</b>`;
+    d.onclick = ()=>showDetail(name);
+    el.appendChild(d);
+  });
+}
+
+function renderRates(){
+  const el = document.getElementById("rates");
+  let html = `SSR合計：${BASE_RATE_TEXT.SSR.toFixed(3)}%<br>SR合計：${BASE_RATE_TEXT.SR.toFixed(3)}%<br>R合計：${BASE_RATE_TEXT.R.toFixed(3)}%<br>`;
+  BANNERS.standard.allSSR.forEach(name=>{
+    const c = charsByName[name];
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.rate).toFixed(3)}%<br>`;
+  });
+  chars.filter(c=>c.rarity !== "SSR").forEach(c=>{
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.rate).toFixed(3)}%<br>`;
+  });
+  el.innerHTML = html;
+}
+function renderGWRates(){
+  const el = document.getElementById("gwRates");
+  let html = `SSR合計：${BASE_RATE_TEXT.SSR.toFixed(3)}%<br>SR合計：${BASE_RATE_TEXT.SR.toFixed(3)}%<br>R合計：${BASE_RATE_TEXT.R.toFixed(3)}%<br>`;
+  BANNERS.gw.allSSR.forEach(name=>{
+    const c = charsByName[name];
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.gwRate).toFixed(3)}%<br>`;
+  });
+  chars.filter(c=>c.rarity !== "SSR").forEach(c=>{
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.gwRate).toFixed(3)}%<br>`;
+  });
+  el.innerHTML = html;
+}
+function renderPermanentRates(){
+  const el = document.getElementById("permanentRates");
+  let html = `SSR合計：${BASE_RATE_TEXT.SSR.toFixed(3)}%<br>SR合計：${BASE_RATE_TEXT.SR.toFixed(3)}%<br>R合計：${BASE_RATE_TEXT.R.toFixed(3)}%<br>`;
+  BANNERS.permanent.allSSR.forEach(name=>{
+    const c = charsByName[name];
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.permRate).toFixed(3)}%<br>`;
+  });
+  chars.filter(c=>c.rarity !== "SSR").forEach(c=>{
+    html += `${c.rarity} ${displayCharName(c)}：${Number(c.permRate).toFixed(3)}%<br>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderBanner(){
+  const standardTexts = [
+    "🏯 常設ガチャ：織田信長・真田幸村・前田慶次",
+    "⚔️ 徳川忠臣PUは本多忠勝・井伊直政のみ",
+    "🎯 100回目はPU30倍 / 200回目はPU50倍 + SSR確定",
+    "📜 常設SSRは各0.060%表示"
+  ];
+  const gwTexts = [
+    "🌿 GW SSRは徳川家康・徳川秀忠のみ",
+    "🎏 GW札でも小判でもOK！",
+    "⚔️ 家康と秀忠は相性抜群！"
+  ];
+  const pTexts = [
+    "🏯 織田信長は常設枠でも出る。",
+    "⚔️ 常設でもSSRを狙える！",
+    "📜 常設ガチャチケ対応済み！"
+  ];
+  document.getElementById("gachaBanner").textContent = standardTexts[Math.floor(Math.random()*standardTexts.length)];
+  document.getElementById("mainBanner").textContent = `ようこそ、${playerName || "大名"}！ ` + standardTexts[Math.floor(Math.random()*standardTexts.length)];
+  document.getElementById("gwBanner").textContent = gwTexts[Math.floor(Math.random()*gwTexts.length)];
+  document.getElementById("permanentBanner").textContent = pTexts[Math.floor(Math.random()*pTexts.length)];
+}
+function renderTitleStatus(){
+  const s = document.getElementById("titleStatus");
+  if(!s) return;
+  const saved = playerName ? `保存済みプレイヤー名: ${playerName}` : "まだプレイヤー名は未設定です。";
+  s.innerHTML = `${saved}<br>ログインするとゲームが始まります。`;
+}
+function renderStorageStatus(){
+  const s = document.getElementById("storageStatus");
+  if(!s) return;
+  const ok = __safeStorageAvailable();
+  s.innerHTML = ok
+    ? "保存機能は使用できます。"
+    : "この開き方では保存機能が制限されることがあります。ログイン自体は使えます。";
+}
+
+function renderLoginGrid(containerId, rewards, currentDay, claimedToday){
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+  rewards.forEach((r, i)=>{
+    const d = document.createElement("div");
+    d.className = "card logcard";
+    if(i + 1 < currentDay) d.classList.add("sr");
+    else if(i + 1 === currentDay && !claimedToday) d.classList.add("selected");
+    else d.classList.add("r");
+    d.innerHTML = `${i+1}日目<br>${r.label}`;
+    el.appendChild(d);
+  });
+}
+function claimGWLogin(){
+  const today = todayKey();
+  if(gwLoginDay > GW_LOGIN_REWARDS.length){ alert("GWログインボーナスは完了"); return; }
+  if(gwLoginLast === today){ alert("今日は受け取り済み"); return; }
+  GW_LOGIN_REWARDS[gwLoginDay - 1].apply();
+  gwLoginLast = today;
+  gwLoginDay++;
+  update();
+  save();
+}
+function claimStartLogin(){
+  const today = todayKey();
+  if(startLoginDay > START_LOGIN_REWARDS.length){ alert("スタートダッシュログインボーナスは完了"); return; }
+  if(startLoginLast === today){ alert("今日は受け取り済み"); return; }
+  START_LOGIN_REWARDS[startLoginDay - 1].apply();
+  startLoginLast = today;
+  startLoginDay++;
+  update();
+  save();
+}
+function renderLogin(){
+  const today = todayKey();
+  const gwClaimed = gwLoginLast === today;
+  const startClaimed = startLoginLast === today;
+  renderLoginGrid("gwLoginGrid", GW_LOGIN_REWARDS, gwLoginDay, gwClaimed);
+  renderLoginGrid("startLoginGrid", START_LOGIN_REWARDS, startLoginDay, startClaimed);
+
+  const gwCurrent = gwLoginDay <= GW_LOGIN_REWARDS.length ? GW_LOGIN_REWARDS[gwLoginDay - 1].label : "完了";
+  const startCurrent = startLoginDay <= START_LOGIN_REWARDS.length ? START_LOGIN_REWARDS[startLoginDay - 1].label : "完了";
+
+  document.getElementById("gwLoginStatus").innerHTML = `GW札所持: ${gwTickets}枚<br>進行: ${Math.min(gwLoginDay - 1, GW_LOGIN_REWARDS.length)}/${GW_LOGIN_REWARDS.length}日<br>次の報酬: ${gwCurrent}`;
+  document.getElementById("startLoginStatus").innerHTML = `豊臣秀吉: ${(collection["豊臣秀吉"]?.count || 0)}枚<br>進行: ${Math.min(startLoginDay - 1, START_LOGIN_REWARDS.length)}/${START_LOGIN_REWARDS.length}日<br>次の報酬: ${startCurrent}`;
+
+  document.getElementById("gwClaimBtn").textContent = gwLoginDay > GW_LOGIN_REWARDS.length ? "完了" : (gwClaimed ? "今日は受取済み" : "受け取る");
+  document.getElementById("startClaimBtn").textContent = startLoginDay > START_LOGIN_REWARDS.length ? "完了" : (startClaimed ? "今日は受取済み" : "受け取る");
+  document.getElementById("gwClaimBtn").disabled = gwLoginDay > GW_LOGIN_REWARDS.length || gwClaimed;
+  document.getElementById("startClaimBtn").disabled = startLoginDay > START_LOGIN_REWARDS.length || startClaimed;
+}
+
+function update(){
+  const playerLine = document.getElementById("playerBanner");
+  if(playerLine) playerLine.textContent = playerName ? `ようこそ、${playerName}！` : "ようこそ";
+
+  document.getElementById("gold").textContent = "小判:" + Math.floor(gold);
+  document.getElementById("clickBtn").textContent = "強化(" + clickCost + ")";
+  document.getElementById("autoBtn").textContent = "足軽(" + autoCost + ")";
+  document.getElementById("partyBtn").textContent = maxExpand > 0 ? `➕ 編成枠拡張(${maxExpand===2 ? 10000 : 20000})` : "編成枠MAX";
+  document.getElementById("stats").textContent = `クリック:${Math.floor(clickPower)} / 秒:${Math.floor(autoIncome)}`;
+
+  renderCollection();
+  renderParty();
+  renderBonus();
+  renderPermanentInfo();
+  renderPermanentPickup();
+  renderPickup();
+  renderGWPickup();
+  renderPermanentRates();
+  renderRates();
+  renderGWRates();
+  renderPuInfo();
+  renderGWInfo();
+  renderBanner();
+  renderLogin();
+  renderGifts();
+  renderTitleStatus();
+  renderStorageStatus();
+  setGachaButtonsDisabled(gachaAnimating);
+}
+
+function save(){
+  safeSetItem("save", JSON.stringify({
+    gold, baseClick, baseAuto, clickCost, autoCost,
+    collection, party, partyMax, maxExpand,
+    standardCount, gwCount, gwTickets, permanentTickets,
+    gwLoginDay, gwLoginLast, startLoginDay, startLoginLast,
+    playerName, gifts
+  }));
+}
+function load(){
+  const s = safeGetItem("save");
+  if(!s){
+    normalizeState();
+    return;
+  }
+  let d;
+  try{ d = JSON.parse(s); }catch(e){ normalizeState(); return; }
+  gold = d.gold || 0;
+  baseClick = d.baseClick || 1;
+  baseAuto = d.baseAuto || 0;
+  clickCost = d.clickCost || 10;
+  autoCost = d.autoCost || 20;
+  collection = d.collection || {};
+  party = d.party || [];
+  partyMax = d.partyMax || 3;
+  maxExpand = d.maxExpand || 2;
+  standardCount = d.standardCount || 0;
+  gwCount = d.gwCount || 0;
+  gwTickets = d.gwTickets || 0;
+  permanentTickets = d.permanentTickets || 0;
+  gwLoginDay = d.gwLoginDay || 1;
+  gwLoginLast = d.gwLoginLast || "";
+  startLoginDay = d.startLoginDay || 1;
+  startLoginLast = d.startLoginLast || "";
+  playerName = d.playerName || "";
+  gifts = Array.isArray(d.gifts) ? d.gifts : [];
+  normalizeState();
+}
+
+function goScreen(id, panelIndex){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById(id).classList.add("show");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  const idx = {main:0,gachaHub:1,giftScreen:4,loginScreen:5,collectionScreen:6}[id];
+  if(idx !== undefined) document.querySelectorAll(".tab")[idx]?.classList.add("active");
+  if(id === "gachaHub") setTimeout(()=>scrollToPanel(panelIndex ?? 0), 30);
+}
+function switchTab(id, el, panelIndex){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById(id).classList.add("show");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  if(id === "gachaHub") setTimeout(()=>scrollToPanel(panelIndex ?? 0), 30);
+}
+function scrollToPanel(index){
+  const carousel = document.getElementById("gachaCarousel");
+  const panel = carousel && carousel.children[index];
+  if(carousel && panel){
+    carousel.scrollTo({left: panel.offsetLeft - carousel.offsetLeft, behavior:"smooth"});
+  }
+}
+function scrollGacha(dir){
+  const carousel = document.getElementById("gachaCarousel");
+  if(!carousel) return;
+  const panelWidth = carousel.clientWidth;
+  carousel.scrollBy({left: dir * panelWidth, behavior:"smooth"});
+}
+
+function renderBanner(){
+  const standardTexts = [
+    "🏯 常設ガチャ：織田信長・真田幸村・前田慶次",
+    "⚔️ 徳川忠臣PUは本多忠勝・井伊直政のみ",
+    "🎯 100回目はPU30倍 / 200回目はPU50倍 + SSR確定",
+    "📜 常設SSRは各0.060%表示"
+  ];
+  const gwTexts = [
+    "🌿 GW SSRは徳川家康・徳川秀忠のみ",
+    "🎏 GW札でも小判でもOK！",
+    "⚔️ 家康と秀忠は相性抜群！"
+  ];
+  const pTexts = [
+    "🏯 織田信長は常設枠でも出る。",
+    "⚔️ 常設でもSSRを狙える！",
+    "📜 常設ガチャチケ対応済み！"
+  ];
+  const gachaBanner = document.getElementById("gachaBanner");
+  const mainBanner = document.getElementById("mainBanner");
+  const gwBanner = document.getElementById("gwBanner");
+  const permanentBanner = document.getElementById("permanentBanner");
+  if(gachaBanner) gachaBanner.textContent = standardTexts[Math.floor(Math.random()*standardTexts.length)];
+  if(mainBanner) mainBanner.textContent = `ようこそ、${getPlayerLabel()}！ ` + standardTexts[Math.floor(Math.random()*standardTexts.length)];
+  if(gwBanner) gwBanner.textContent = gwTexts[Math.floor(Math.random()*gwTexts.length)];
+  if(permanentBanner) permanentBanner.textContent = pTexts[Math.floor(Math.random()*pTexts.length)];
+}
+function renderTitleStatus(){
+  const s = document.getElementById("titleStatus");
+  if(!s) return;
+  const saved = playerName ? `保存済みプレイヤー名: ${playerName}` : "まだプレイヤー名は未設定です。";
+  const account = playerId
+    ? `ID: <b>${playerId}</b><br>パスワード: <b>${playerPassword}</b>`
+    : "まだアカウントはありません。ログインするとIDとパスワードが発行されます。";
+  s.innerHTML = `${saved}<br>${account}<br>ログインするとゲームが始まります。`;
+}
+function renderProfileTitles(){
+  const titleSelect = document.getElementById("profileTitleSelect");
+  if(!titleSelect) return;
+  const titles = Array.from(new Set([...(ownedTitles || []), displayTitle || "無名の大名"]));
+  titleSelect.innerHTML = titles.map(t => `<option value="${t.replace(/"/g,'&quot;')}">${t}</option>`).join("");
+  titleSelect.value = displayTitle || "無名の大名";
+}
+function renderFriendList(){
+  const list = document.getElementById("friendList");
+  if(!list) return;
+  const profiles = getAllProfiles();
+  list.innerHTML = "";
+  if(friendIds.length === 0){ list.innerHTML = "<p>まだフレンドはいません。</p>"; return; }
+  friendIds.forEach(id => {
+    const p = profiles.find(v => v.id === id) || loadProfileById(id);
+    const friendGold = p ? Math.floor(Number(p.gold || 0)) : 0;
+    const friendName = p ? (p.name || p.playerName || "不明") : "不明";
+    const friendTitle = p ? (p.title || p.displayTitle || "無称号") : "未登録";
+    const card = document.createElement("div");
+    card.className = "friendCard";
+    card.innerHTML = `
+      <b>${friendName}</b> <span class="inlineBadge">${friendTitle}</span><br>
+      <span class="metaLine">ID: ${id}<br>小判: ${formatGold(friendGold)}</span>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="button copyBtn" onclick="copyText('${id}')">IDコピー</button>
+        <button class="button copyBtn" onclick="removeFriendById('${id}')">解除</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+function searchPlayerById(){
+  const id = (document.getElementById("profileSearchInput")?.value || "").trim();
+  const resultBox = document.getElementById("profileSearchResult");
+  if(!id){ if(resultBox) resultBox.innerHTML = "プレイヤーIDを入力してください。"; return; }
+  const profiles = getAllProfiles();
+  const p = profiles.find(v => v.id === id) || loadProfileById(id);
+  if(!p){ profileSearchResult = null; if(resultBox) resultBox.innerHTML = "見つかりませんでした。"; return; }
+  profileSearchResult = { id, name: p.name || p.playerName || "不明", title: p.title || p.displayTitle || "無称号", gold: Number(p.gold || 0), friendIds: cloneArray(p.friendIds) };
+  const isFriend = friendIds.includes(id);
+  const isSelf = id === playerId;
+  if(resultBox){
+    resultBox.innerHTML = `
+      <b>${profileSearchResult.name}</b> <span class="inlineBadge">${profileSearchResult.title}</span><br>
+      <span class="metaLine">ID: ${profileSearchResult.id}<br>小判: ${formatGold(profileSearchResult.gold)}<br>状態: ${isSelf ? "自分のプロフィール" : (isFriend ? "フレンド" : "未フレンド")}</span>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="button copyBtn" onclick="copyText('${profileSearchResult.id}')">IDコピー</button>
+        ${isSelf ? '' : `<button class="button copyBtn" onclick="addFriendById('${profileSearchResult.id}')">フレンド追加</button>`}
+      </div>
+    `;
+  }
+  renderProfile();
+}
+function renderRanking(){
+  const list = getAllProfiles();
+  const rankingBox = document.getElementById("rankingList");
+  const note = document.getElementById("rankingRewardNote");
+  const btn = document.getElementById("rankingRewardBtn");
+  if(!rankingBox || !note || !btn) return;
+  rankingBox.innerHTML = "";
+  const myRank = list.findIndex(v => v.id === playerId) + 1;
+  const tier = rankingTierForRank(myRank);
+  note.innerHTML = tier ? `現在の順位: <b>${myRank}位</b><br>受取可能: <b>${tier.label}</b> / ${tier.note}<br>特別称号: <b>${tier.title}</b>` : `現在の順位: <b>${myRank > 0 ? myRank : "未登録"}位</b><br>50位以内でランキング報酬を受け取れます。`;
+  btn.textContent = tier ? `${tier.label}の報酬を受け取る` : "対象外";
+  btn.disabled = !tier || !!rankingRewardClaims[tier.key];
+  const topList = list.slice(0, 50);
+  if(topList.length === 0){ rankingBox.innerHTML = "<p>まだ登録プレイヤーがいません。</p>"; return; }
+  topList.forEach((p, idx) => {
+    const item = document.createElement("div");
+    item.className = `rankItem ${idx === 0 ? "rankTop1" : ""} ${p.id === playerId ? "rankMe" : ""}`;
+    item.innerHTML = `
+      <b>${idx + 1}位 ${p.name || "無名"}</b> <span class="inlineBadge">${p.title || "無称号"}</span>
+      ${idx === 0 ? '<span class="inlineBadge">1位特別</span>' : ''}<br>
+      <span class="metaLine">小判: ${formatGold(p.gold)}<br>ID: ${p.id}</span>
+    `;
+    item.onclick = () => {
+      const searchInput = document.getElementById("profileSearchInput");
+      if(searchInput) searchInput.value = p.id;
+      searchPlayerById();
+      goScreen('profileScreen');
+    };
+    rankingBox.appendChild(item);
+  });
+}
+function claimRankingReward(){
+  const list = getAllProfiles();
+  const myRank = list.findIndex(v => v.id === playerId) + 1;
+  const tier = rankingTierForRank(myRank);
+  if(!tier){ alert("ランキング50位以内ではありません。"); return; }
+  if(rankingRewardClaims[tier.key]){ alert("このランキング報酬は受取済みです。"); return; }
+  rankingRewardClaims[tier.key] = true;
+  rewardPermanentTickets(tier.tickets);
+  grantTitle(tier.title);
+  if(myRank === 1) displayTitle = tier.title;
+  saveProfileData();
+  update();
+  renderRanking();
+  renderProfile();
+  alert(`${tier.label}の報酬を受け取りました。常設ガチャチケ×${tier.tickets}、称号「${tier.title}」を獲得しました。`);
+}
+function renderProfile(){
+  const idBox = document.getElementById("profileIdentityBox");
+  const nameInput = document.getElementById("profileNameInput");
+  const titleInput = document.getElementById("profileTitleInput");
+  const searchInput = document.getElementById("profileSearchInput");
+  const resultBox = document.getElementById("profileSearchResult");
+  if(idBox){
+    const currentRank = getCurrentRank();
+    idBox.innerHTML = `
+      プレイヤー名: <b>${playerName || "未設定"}</b><br>
+      表示称号: <b>${displayTitle || "無称号"}</b><br>
+      プレイヤーID: <b>${playerId || "未発行"}</b> <button class="button copyBtn" onclick="copyText('${playerId || ""}')">コピー</button><br>
+      パスワード: <b>${playerPassword || "未発行"}</b> <button class="button copyBtn" onclick="copyText('${playerPassword || ""}')">コピー</button><br>
+      所持小判: <b>${formatGold(gold)}</b><br>
+      フレンド数: <b>${friendIds.length}</b><br>
+      ランキング順位: <b>${currentRank > 0 ? `${currentRank}位` : "未登録"}</b><br>
+      所持称号: <b>${(ownedTitles || []).join(' / ')}</b>
+    `;
+  }
+  if(nameInput) nameInput.value = playerName || "";
+  if(titleInput) titleInput.value = displayTitle || "";
+  renderProfileTitles();
+  if(resultBox && !profileSearchResult) resultBox.innerHTML = "検索結果はここに表示されます。";
+  renderFriendList();
+}
+function renderLoginGrid(containerId, rewards, currentDay, claimedToday){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = "";
+  rewards.forEach((r, i)=>{
+    const d = document.createElement("div");
+    d.className = "card logcard";
+    if(i + 1 < currentDay) d.classList.add("sr");
+    else if(i + 1 === currentDay && !claimedToday) d.classList.add("selected");
+    else d.classList.add("r");
+    d.innerHTML = `${i+1}日目<br>${r.label}`;
+    el.appendChild(d);
+  });
+}
+function renderLogin(){
+  const today = todayKey();
+  const gwClaimed = gwLoginLast === today;
+  const startClaimed = startLoginLast === today;
+  renderLoginGrid("gwLoginGrid", GW_LOGIN_REWARDS, gwLoginDay, gwClaimed);
+  renderLoginGrid("startLoginGrid", START_LOGIN_REWARDS, startLoginDay, startClaimed);
+  const gwCurrent = gwLoginDay <= GW_LOGIN_REWARDS.length ? GW_LOGIN_REWARDS[gwLoginDay - 1].label : "完了";
+  const startCurrent = startLoginDay <= START_LOGIN_REWARDS.length ? START_LOGIN_REWARDS[startLoginDay - 1].label : "完了";
+  const gwStatus = document.getElementById("gwLoginStatus");
+  const startStatus = document.getElementById("startLoginStatus");
+  if(gwStatus) gwStatus.innerHTML = `GW札所持: ${gwTickets}枚<br>進行: ${Math.min(gwLoginDay - 1, GW_LOGIN_REWARDS.length)}/${GW_LOGIN_REWARDS.length}日<br>次の報酬: ${gwCurrent}`;
+  if(startStatus) startStatus.innerHTML = `豊臣秀吉: ${(collection["豊臣秀吉"]?.count || 0)}枚<br>進行: ${Math.min(startLoginDay - 1, START_LOGIN_REWARDS.length)}/${START_LOGIN_REWARDS.length}日<br>次の報酬: ${startCurrent}`;
+  const gwBtn = document.getElementById("gwClaimBtn");
+  const startBtn = document.getElementById("startClaimBtn");
+  if(gwBtn){ gwBtn.textContent = gwLoginDay > GW_LOGIN_REWARDS.length ? "完了" : (gwClaimed ? "今日は受取済み" : "受け取る"); gwBtn.disabled = gwLoginDay > GW_LOGIN_REWARDS.length || gwClaimed; }
+  if(startBtn){ startBtn.textContent = startLoginDay > START_LOGIN_REWARDS.length ? "完了" : (startClaimed ? "今日は受取済み" : "受け取る"); startBtn.disabled = startLoginDay > START_LOGIN_REWARDS.length || startClaimed; }
+}
+function update(){
+  const playerLine = document.getElementById("playerBanner");
+  if(playerLine) playerLine.textContent = playerName ? `ようこそ、${getPlayerLabel()}！` : "ようこそ";
+  const goldEl = document.getElementById("gold");
+  const clickBtn = document.getElementById("clickBtn");
+  const autoBtn = document.getElementById("autoBtn");
+  const partyBtn = document.getElementById("partyBtn");
+  const statsEl = document.getElementById("stats");
+  if(goldEl) goldEl.textContent = "小判:" + Math.floor(gold);
+  if(clickBtn) clickBtn.textContent = "強化(" + clickCost + ")";
+  if(autoBtn) autoBtn.textContent = "足軽(" + autoCost + ")";
+  if(partyBtn) partyBtn.textContent = maxExpand > 0 ? `➕ 編成枠拡張(${maxExpand===2 ? 10000 : 20000})` : "編成枠MAX";
+  if(statsEl) statsEl.textContent = `クリック:${Math.floor(clickPower)} / 秒:${Math.floor(autoIncome)}`;
+  renderCollection();
+  renderParty();
+  renderBonus();
+  renderPermanentInfo();
+  renderPermanentPickup();
+  renderPickup();
+  renderGWPickup();
+  renderPermanentRates();
+  renderRates();
+  renderGWRates();
+  renderPuInfo();
+  renderGWInfo();
+  renderBanner();
+  renderLogin();
+  renderGifts();
+  renderRanking();
+  renderProfile();
+  renderTitleStatus();
+  setGachaButtonsDisabled(gachaAnimating);
+}
+function save(){ saveProfileData(); }
+function load(){
+  const activeId = safeGetItem(ACTIVE_PROFILE_KEY);
+  if(activeId){
+    const raw = safeGetItem(getProfileSaveKey(activeId));
+    if(raw){
+      try{
+        const parsed = JSON.parse(raw);
+        applySaveData(parsed);
+        playerId = playerId || activeId;
+        activeProfileKey = playerId;
+        playerPassword = playerPassword || parsed.playerPassword || "";
+        ensureCurrentProfileMeta();
+        upsertRegistryEntry();
+        return;
+      }catch(e){}
+    }
+  }
+  const legacy = getLegacyProfileData();
+  if(legacy){
+    applySaveData(legacy);
+    ensureCurrentProfileMeta();
+    if(!playerId) playerId = generatePlayerId();
+    if(!playerPassword) playerPassword = generatePassword();
+    activeProfileKey = playerId;
+    saveProfileData();
+    return;
+  }
+  normalizeState();
+}
+function goScreen(id, panelIndex){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  const target = document.getElementById(id);
+  if(target) target.classList.add("show");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  const idx = {main:0,gachaHub:1,giftScreen:4,loginScreen:5,rankingScreen:6,profileScreen:7,collectionScreen:8}[id];
+  if(idx !== undefined) document.querySelectorAll(".tab")[idx]?.classList.add("active");
+  if(id === "gachaHub") setTimeout(()=>scrollToPanel(panelIndex ?? 0), 30);
+}
+function switchTab(id, el, panelIndex){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById(id).classList.add("show");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  if(id === "gachaHub") setTimeout(()=>scrollToPanel(panelIndex ?? 0), 30);
+}
+function scrollToPanel(index){
+  const carousel = document.getElementById("gachaCarousel");
+  const panel = carousel && carousel.children[index];
+  if(carousel && panel){
+    carousel.scrollTo({left: panel.offsetLeft - carousel.offsetLeft, behavior:"smooth"});
+  }
+}
+function scrollGacha(dir){
+  const carousel = document.getElementById("gachaCarousel");
+  if(!carousel) return;
+  const panelWidth = carousel.clientWidth;
+  carousel.scrollBy({left: dir * panelWidth, behavior:"smooth"});
+}
+function clearAllGameStorage(){
+  const keys = [];
+  for(let i=0;i<safeStorageKeys().length;i++){
+    const key = safeStorageKey(i);
+    if(!key) continue;
+    if(key === LEGACY_SAVE_KEY || key === PROFILE_REGISTRY_KEY || key === ACTIVE_PROFILE_KEY || key.startsWith(PROFILE_PREFIX)) keys.push(key);
+  }
+  keys.forEach(k => safeRemoveItem(k));
+}
+
+/* ===== initial ===== */
+load();
+document.getElementById("titlePlayerName").value = playerName || "";
+renderTitleStatus();
+renderStorageStatus();
+calcStats();
+setInterval(renderBanner, 4000);
+update();
+
+if(playerName){
+  document.getElementById("tabbar").style.display = "flex";
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById("main").classList.add("show");
+} else {
+  enterTitle();
+}
+</script>
+</body>
+</html>
